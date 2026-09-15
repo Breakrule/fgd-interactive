@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import json
 from datetime import datetime
+from fpdf import FPDF
+from docx import Document
+from docx.shared import Pt, Inches, Cm
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import io
 
 # Configure page settings
 st.set_page_config(
@@ -456,20 +461,45 @@ else:
     st.title("✍️ Penandatanganan Berita Acara Kesepakatan FGD I")
     st.markdown("Di akhir pelaksanaan FGD, draf naskah kesepakatan komitmen bersama ini dicetak dan ditandatangani oleh perwakilan pimpinan OPD kunci sebagai bukti kesepakatan program.")
     
+    # Berita Acara content
+    berita_acara_title = "BERITA ACARA KESEPAKATAN HASIL FGD I"
+    berita_acara_body = (
+        "Pada hari ini, Rabu tanggal Dua Puluh Tiga bulan September tahun Dua Ribu Dua Puluh Enam (23-09-2026), "
+        "bertempat di Kabupaten Kotabaru, seluruh unsur pemangku kepentingan (Pentahelix) pengembangan Geopark Kotabaru "
+        "(Klaster Saijaan Bersujud) yang bertandatangan di bawah ini telah menyepakati draf Road Map Pengembangan "
+        "Geopark Kotabaru V3 Jangka Pendek, Menengah, dan Panjang berbasis Tiga Pilar Geopark "
+        "(Geodiversity, Biodiversity, Cultural Diversity)."
+    )
+    kesepakatan_points = [
+        "Menyetujui hasil delineasi awal inventarisasi geosite ilmiah hasil kerja sama dengan Dinas ESDM Provinsi Kalsel guna mengusulkan Kawasan Cagar Alam Geologi (KCAG) ke Kementerian ESDM.",
+        "Berkomitmen menyinkronkan dan mengintegrasikan program kerja sektoral masing-masing OPD/SKPD, termasuk program pembinaan aparatur daerah oleh BKPSDMD ke dalam Road Map terpadu.",
+        "Mendukung penuh penyusunan kurikulum muatan lokal sekolah dasar 'Bumi & Alam Saijaan Bersujud' serta menyepakati pergeseran program pembinaan UMKM & Geo-products ke jangka panjang demi kesiapan infrastruktur daerah."
+    ]
+    penutup = "Demikian Berita Acara ini dibuat dengan kesadaran penuh demi kelestarian bumi dan kesejahteraan masyarakat Kotabaru."
+    
+    pihak_pemkab = [
+        "Asisten III Administrasi Umum Setda",
+        "Kepala Bapperida Kotabaru",
+        "Kepala Disparpora Kotabaru",
+        "Kepala BKPSDMD Kotabaru"
+    ]
+    pihak_mitra = [
+        "Dinas ESDM Provinsi Kalimantan Selatan",
+        "Badan Pengelola Geopark Meratus"
+    ]
+    
     with st.container():
-        st.markdown("### **BERITA ACARA KESEPAKATAN HASIL FGD I**")
+        st.markdown(f"### **{berita_acara_title}**")
         st.markdown(
             f"""
-            Pada hari ini, **Rabu tanggal Dua Puluh Tiga bulan September tahun Dua Ribu Dua Puluh Enam (23-09-2026)**, bertempat di Kabupaten Kotabaru, 
-            seluruh unsur pemangku kepentingan (*Pentahelix*) pengembangan Geopark Kotabaru (Klaster Saijaan Bersujud) yang bertandatangan di bawah ini 
-            telah menyepakati draf **Road Map Pengembangan Geopark Kotabaru V3** Jangka Pendek, Menengah, dan Panjang berbasis Tiga Pilar Geopark (*Geodiversity, Biodiversity, Cultural Diversity*).
+            {berita_acara_body}
             
             **Poin-Poin Kesepakatan Utama:**
-            1. Menyetujui hasil delineasi awal inventarisasi geosite ilmiah hasil kerja sama dengan Dinas ESDM Provinsi Kalsel guna mengusulkan Kawasan Cagar Alam Geologi (KCAG) ke Kementerian ESDM.
-            2. Berkomitmen menyinkronkan dan mengintegrasikan program kerja sektoral masing-masing OPD/SKPD, termasuk program pembinaan aparatur daerah oleh BKPSDMD ke dalam Road Map terpadu.
-            3. Mendukung penuh penyusunan kurikulum muatan lokal sekolah dasar "Bumi & Alam Saijaan Bersujud" serta menyepakati pergeseran program pembinaan UMKM & Geo-products ke jangka panjang demi kesiapan infrastruktur daerah.
+            1. {kesepakatan_points[0]}
+            2. {kesepakatan_points[1]}
+            3. {kesepakatan_points[2]}
             
-            Demikian Berita Acara ini dibuat dengan kesadaran penuh demi kelestarian bumi dan kesejahteraan masyarakat Kotabaru.
+            {penutup}
             """
         )
         
@@ -478,13 +508,239 @@ else:
         col1, col2 = st.columns(2)
         with col1:
             st.write("✒️ **Pemerintah Kabupaten Kotabaru**")
-            st.write("- Asisten III Administrasi Umum Setda")
-            st.write("- Kepala Bapperida Kotabaru")
-            st.write("- Kepala Disparpora Kotabaru")
-            st.write("- Kepala BKPSDMD Kotabaru")
+            for p in pihak_pemkab:
+                st.write(f"- {p}")
         with col2:
             st.write("✒️ **Mitra Jaringan & Provinsi**")
-            st.write("- Dinas ESDM Provinsi Kalimantan Selatan")
-            st.write("- Badan Pengelola Geopark Meratus")
+            for m in pihak_mitra:
+                st.write(f"- {m}")
+    
+    # --- Export Options ---
+    st.markdown("---")
+    st.subheader("📄 Ekspor Dokumen Berita Acara")
+    
+    include_matrix = st.checkbox("Sertakan tabel Matriks Road Map dalam dokumen ekspor", value=True)
+    
+    col_pdf, col_docx, col_print = st.columns(3)
+    
+    # === PDF Export ===
+    with col_pdf:
+        def generate_pdf():
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_auto_page_break(auto=True, margin=20)
             
-        st.button("🖨️ Cetak Berita Acara (Simulasi Print)")
+            # Title
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, berita_acara_title, ln=True, align="C")
+            pdf.ln(5)
+            
+            # Body
+            pdf.set_font("Helvetica", "", 11)
+            pdf.multi_cell(0, 6, berita_acara_body)
+            pdf.ln(4)
+            
+            # Kesepakatan points
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.cell(0, 8, "Poin-Poin Kesepakatan Utama:", ln=True)
+            pdf.set_font("Helvetica", "", 11)
+            for i, point in enumerate(kesepakatan_points, 1):
+                pdf.multi_cell(0, 6, f"{i}. {point}")
+                pdf.ln(2)
+            
+            pdf.ln(3)
+            pdf.multi_cell(0, 6, penutup)
+            pdf.ln(10)
+            
+            # Signatories
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.cell(0, 8, "Daftar Pihak yang Menyetujui:", ln=True)
+            pdf.ln(3)
+            
+            pdf.set_font("Helvetica", "B", 10)
+            pdf.cell(95, 7, "Pemerintah Kabupaten Kotabaru:", ln=False)
+            pdf.cell(95, 7, "Mitra Jaringan & Provinsi:", ln=True)
+            pdf.set_font("Helvetica", "", 10)
+            
+            max_rows = max(len(pihak_pemkab), len(pihak_mitra))
+            for i in range(max_rows):
+                left = f"- {pihak_pemkab[i]}" if i < len(pihak_pemkab) else ""
+                right = f"- {pihak_mitra[i]}" if i < len(pihak_mitra) else ""
+                pdf.cell(95, 6, left, ln=False)
+                pdf.cell(95, 6, right, ln=True)
+            
+            pdf.ln(15)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.cell(95, 6, "Kotabaru, 23 September 2026", ln=False)
+            pdf.cell(95, 6, "", ln=True)
+            pdf.ln(20)
+            pdf.cell(95, 6, "(___________________________)", ln=False)
+            pdf.cell(95, 6, "(___________________________)", ln=True)
+            
+            # Include matrix table if requested
+            if include_matrix:
+                pdf.add_page()
+                pdf.set_font("Helvetica", "B", 12)
+                pdf.cell(0, 10, "LAMPIRAN: Matriks Road Map Geopark Kotabaru V3", ln=True, align="C")
+                pdf.ln(3)
+                
+                df = pd.DataFrame(st.session_state.matrix_data)
+                # Use simpler columns for PDF table
+                pdf_cols = ["No", "Pilar Utama", "Nama Program / Kegiatan", "OPD Lead", "Timeline"]
+                col_widths = [10, 40, 70, 40, 30]
+                
+                pdf.set_font("Helvetica", "B", 7)
+                for i, col_name in enumerate(pdf_cols):
+                    pdf.cell(col_widths[i], 6, col_name, border=1, align="C")
+                pdf.ln()
+                
+                pdf.set_font("Helvetica", "", 7)
+                for _, row in df.iterrows():
+                    max_h = 6
+                    row_data = []
+                    for col_name in pdf_cols:
+                        text = str(row[col_name])[:45]  # Truncate long text
+                        row_data.append(text)
+                    
+                    for i, text in enumerate(row_data):
+                        pdf.cell(col_widths[i], max_h, text, border=1)
+                    pdf.ln()
+            
+            return pdf.output()
+        
+        pdf_bytes = generate_pdf()
+        st.download_button(
+            label="📥 Download PDF",
+            data=pdf_bytes,
+            file_name="Berita_Acara_FGD_I_Geopark_Kotabaru.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    
+    # === DOCX Export ===
+    with col_docx:
+        def generate_docx():
+            doc = Document()
+            
+            # Set margins
+            for section in doc.sections:
+                section.top_margin = Cm(2.5)
+                section.bottom_margin = Cm(2.5)
+                section.left_margin = Cm(3)
+                section.right_margin = Cm(2.5)
+            
+            # Title
+            title = doc.add_heading(berita_acara_title, level=1)
+            title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            # Body
+            p = doc.add_paragraph(berita_acara_body)
+            p.paragraph_format.space_after = Pt(12)
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            
+            # Kesepakatan points
+            doc.add_paragraph("Poin-Poin Kesepakatan Utama:", style="Heading 3")
+            for point in kesepakatan_points:
+                p = doc.add_paragraph(point, style="List Number")
+                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            
+            doc.add_paragraph()
+            p = doc.add_paragraph(penutup)
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            
+            # Signatories
+            doc.add_paragraph()
+            doc.add_heading("Daftar Pihak yang Menyetujui:", level=3)
+            
+            table = doc.add_table(rows=1, cols=2)
+            table.style = "Table Grid"
+            
+            # Header row
+            hdr = table.rows[0].cells
+            hdr[0].text = "Pemerintah Kabupaten Kotabaru"
+            hdr[1].text = "Mitra Jaringan & Provinsi"
+            for cell in hdr:
+                for paragraph in cell.paragraphs:
+                    paragraph.runs[0].bold = True
+            
+            # Content rows
+            max_rows = max(len(pihak_pemkab), len(pihak_mitra))
+            for i in range(max_rows):
+                row = table.add_row().cells
+                row[0].text = f"- {pihak_pemkab[i]}" if i < len(pihak_pemkab) else ""
+                row[1].text = f"- {pihak_mitra[i]}" if i < len(pihak_mitra) else ""
+            
+            # Signature area
+            doc.add_paragraph()
+            doc.add_paragraph()
+            sig_table = doc.add_table(rows=3, cols=2)
+            sig_table.rows[0].cells[0].text = "Kotabaru, 23 September 2026"
+            sig_table.rows[2].cells[0].text = "(___________________________)"
+            sig_table.rows[2].cells[1].text = "(___________________________)"
+            
+            # Include matrix if requested
+            if include_matrix:
+                doc.add_page_break()
+                doc.add_heading("LAMPIRAN: Matriks Road Map Geopark Kotabaru V3", level=2)
+                
+                df = pd.DataFrame(st.session_state.matrix_data)
+                pdf_cols = ["No", "Pilar Utama", "Nama Program / Kegiatan", "OPD Lead", "KPI", "Timeline"]
+                
+                matrix_table = doc.add_table(rows=1, cols=len(pdf_cols))
+                matrix_table.style = "Table Grid"
+                
+                # Header
+                for i, col_name in enumerate(pdf_cols):
+                    matrix_table.rows[0].cells[i].text = col_name
+                    for paragraph in matrix_table.rows[0].cells[i].paragraphs:
+                        paragraph.runs[0].bold = True
+                
+                # Data rows
+                for _, row_data in df.iterrows():
+                    row = matrix_table.add_row().cells
+                    for i, col_name in enumerate(pdf_cols):
+                        row[i].text = str(row_data[col_name])
+                
+                # Set font size for table
+                for row in matrix_table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            paragraph.style.font.size = Pt(8)
+            
+            # Save to bytes
+            buffer = io.BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+            return buffer.getvalue()
+        
+        docx_bytes = generate_docx()
+        st.download_button(
+            label="📥 Download Word (.docx)",
+            data=docx_bytes,
+            file_name="Berita_Acara_FGD_I_Geopark_Kotabaru.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            use_container_width=True
+        )
+    
+    # === Print (Browser) ===
+    with col_print:
+        st.markdown(
+            """
+            <style>
+            @media print {
+                .stApp { background: white; }
+                .stSidebar, .stButton, .stDownloadButton, header, footer { display: none !important; }
+            }
+            </style>
+            <script>
+            function printPage() {
+                window.print();
+            }
+            </script>
+            """,
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            '<button onclick="window.print()" style="width:100%;padding:10px 16px;background-color:#4CAF50;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:bold;">🖨️ Cetak / Print (Browser)</button>',
+            unsafe_allow_html=True
+        )
