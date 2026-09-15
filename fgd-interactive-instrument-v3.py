@@ -606,7 +606,7 @@ else:
                         pdf.cell(col_widths[i], max_h, text, border=1)
                     pdf.ln()
             
-            return pdf.output()
+            return bytes(pdf.output())
         
         pdf_bytes = generate_pdf()
         st.download_button(
