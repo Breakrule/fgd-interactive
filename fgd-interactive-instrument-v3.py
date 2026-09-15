@@ -453,7 +453,7 @@ CGK_RAW_DATA = [
 # =========================================================
 # CGK MONITORING DASHBOARD - RENDER FUNCTION
 # =========================================================
-def render_cgk_dashboard():
+def render_cgk_dashboard(view_mode):
     # Custom CSS styling for professional executive dashboard look
     st.markdown("""
     <style>
@@ -540,15 +540,7 @@ def render_cgk_dashboard():
 
     st.markdown("---")
 
-    # ---------- Visualization view modes ----------
-    view_mode = st.radio(
-        "Pilih Tampilan Visualisasi Monitoring:",
-        ["📊 Ringkasan & Grafik Performa", "✏️ Update Status Real-Time Interaktif", "📋 Matriks Program Kerja (Filtered)", "📥 Ekspor & Integrasi One Data"],
-        horizontal=True
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
+    # ---------- Visualization (view_mode is chosen from the sidebar) ----------
     color_map = {
         "Selesai": "#2ECC71",
         "Dalam Proses": "#F39C12",
@@ -701,13 +693,59 @@ def render_cgk_dashboard():
 
 # App UI
 st.sidebar.image("https://img.icons8.com/color/96/earth-element.png", width=80)
-st.sidebar.title("Kuesioner FGD Geopark")
+st.sidebar.title("FGD Geopark Kotabaru")
 st.sidebar.caption("Kabupaten Kotabaru - Klaster Saijaan Bersujud")
 st.sidebar.markdown("---")
 
+# Navigation option lists (two separate groups)
+DASHBOARD_VIEWS = [
+    "📊 Ringkasan & Grafik Performa",
+    "✏️ Update Status Real-Time Interaktif",
+    "📋 Matriks Program Kerja (Filtered)",
+    "📥 Ekspor & Integrasi One Data"
+]
+KUESIONER_MENUS = [
+    "📝 Input Kuesioner OPD",
+    "📊 Quick Count Real-Time",
+    "🗂️ Rekapitulasi Data Responden"
+]
+
+# First load: the Dashboard group is active and shows its first view
+if "active_section" not in st.session_state:
+    st.session_state.active_section = "dashboard"
+    st.session_state.radio_dashboard = DASHBOARD_VIEWS[0]
+
+def _activate_dashboard():
+    st.session_state.active_section = "dashboard"
+
+def _activate_kuesioner():
+    st.session_state.active_section = "kuesioner"
+
+# Keep only the ACTIVE group highlighted and clear the other one, so clicking any
+# of its items always re-triggers navigation (a radio does not fire on_change when
+# the already-selected item is clicked again).
+if st.session_state.active_section == "dashboard":
+    st.session_state.radio_kuesioner = None
+else:
+    st.session_state.radio_dashboard = None
+
+# --- Group 1 (TOP): Dashboard Monitoring CGK ---
+dashboard_view = st.sidebar.radio(
+    "📈 Dashboard Monitoring CGK",
+    DASHBOARD_VIEWS,
+    key="radio_dashboard",
+    index=None,
+    on_change=_activate_dashboard
+)
+st.sidebar.markdown("---")
+
+# --- Group 2 (BOTTOM): Kuesioner FGD ---
 menu = st.sidebar.radio(
-    "Pilih Menu Aplikasi:",
-    ["📝 Input Kuesioner OPD", "📊 Quick Count Real-Time", "🗂️ Rekapitulasi Data Responden", "📈 Dashboard Monitoring CGK"]
+    "📋 Kuesioner FGD",
+    KUESIONER_MENUS,
+    key="radio_kuesioner",
+    index=None,
+    on_change=_activate_kuesioner
 )
 
 st.sidebar.markdown("---")
@@ -717,9 +755,15 @@ st.sidebar.info(
 )
 
 # ---------------------------------------------------------
-# MENU 1: INPUT KUESIONER OPD
+# DASHBOARD MONITORING CGK (top navigation group)
 # ---------------------------------------------------------
-if menu == "📝 Input Kuesioner OPD":
+if st.session_state.active_section == "dashboard":
+    render_cgk_dashboard(dashboard_view or DASHBOARD_VIEWS[0])
+
+# ---------------------------------------------------------
+# KUESIONER GROUP - MENU 1: INPUT KUESIONER OPD
+# ---------------------------------------------------------
+elif menu == "📝 Input Kuesioner OPD":
     st.title("📝 Form Kuesioner Persepsi Pemangku Kepentingan")
     st.caption("Aplikasi Input Data Resmi FGD I: Integrasi Road Map Geopark Kotabaru V3")
     
@@ -868,7 +912,7 @@ if menu == "📝 Input Kuesioner OPD":
                 st.success(f"✅ Terima kasih **{nama}** ({instansi})! Jawaban kuesioner Anda berhasil disimpan dan langsung masuk ke Quick Count Real-Time.")
 
 # ---------------------------------------------------------
-# MENU 2: QUICK COUNT REAL-TIME
+# KUESIONER GROUP - MENU 2: QUICK COUNT REAL-TIME
 # ---------------------------------------------------------
 elif menu == "📊 Quick Count Real-Time":
     st.title("📊 Quick Count Real-Time Hasil Kuesioner FGD")
@@ -962,13 +1006,7 @@ elif menu == "📊 Quick Count Real-Time":
                 st.info("Belum ada prioritas program yang tercatat.")
 
 # ---------------------------------------------------------
-# MENU 3: DASHBOARD MONITORING CGK
-# ---------------------------------------------------------
-elif menu == "📈 Dashboard Monitoring CGK":
-    render_cgk_dashboard()
-
-# ---------------------------------------------------------
-# MENU 4: REKAPITULASI DATA RESPONDEN
+# KUESIONER GROUP - MENU 3: REKAPITULASI DATA RESPONDEN
 # ---------------------------------------------------------
 else:
     st.title("🗂️ Rekapitulasi Data Responden & Jawaban Mentah")
