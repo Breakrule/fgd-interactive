@@ -731,16 +731,29 @@ else:
                 .stApp { background: white; }
                 .stSidebar, .stButton, .stDownloadButton, header, footer { display: none !important; }
             }
-            </style>
-            <script>
-            function printPage() {
-                window.print();
+            .print-btn-custom {
+                width: 100%;
+                padding: 0.5rem 1rem;
+                background-color: #FF4B4B;
+                color: white;
+                border: none;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                font-size: 0.875rem;
+                font-weight: 600;
+                font-family: "Source Sans Pro", sans-serif;
+                height: 2.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.25rem;
+                transition: background-color 0.2s;
             }
-            </script>
+            .print-btn-custom:hover {
+                background-color: #FF2B2B;
+            }
+            </style>
+            <button class="print-btn-custom" onclick="window.print()">🖨️ Cetak / Print (Browser)</button>
             """,
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            '<button onclick="window.print()" style="width:100%;padding:10px 16px;background-color:#4CAF50;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:bold;">🖨️ Cetak / Print (Browser)</button>',
             unsafe_allow_html=True
         )
