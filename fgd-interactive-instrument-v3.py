@@ -15,6 +15,9 @@ st.set_page_config(
 
 DATA_FILE = "data_kuesioner_fgd.csv"
 
+# Separator used to join multiple selected options into a single CSV cell
+MULTI_SEPARATOR = " | "
+
 # Predefined Questions Definition
 QUESTIONS = [
     {"id": "Q_01", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Pemerintah daerah dan masyarakat memiliki kesadaran tinggi untuk menjaga warisan batuan/geologi di Kotabaru agar terhindar dari perusakan."},
@@ -99,6 +102,23 @@ def save_response(row_dict):
     df_updated = pd.concat([df, df_new], ignore_index=True)
     df_updated.to_csv(DATA_FILE, index=False)
 
+# Helper function to count multi-select options stored as joined strings
+def count_multi_options(series, separator=MULTI_SEPARATOR):
+    from collections import Counter
+    counter = Counter()
+    for val in series.dropna():
+        for opt in str(val).split(separator):
+            opt = opt.strip()
+            if opt:
+                counter[opt] += 1
+    df_counts = pd.DataFrame(
+        [(opt, cnt) for opt, cnt in counter.items()],
+        columns=["Opsi", "Jumlah"]
+    )
+    if not df_counts.empty:
+        df_counts = df_counts.sort_values("Jumlah", ascending=False).reset_index(drop=True)
+    return df_counts
+
 # App UI
 st.sidebar.image("https://img.icons8.com/color/96/earth-element.png", width=80)
 st.sidebar.title("Kuesioner FGD Geopark")
@@ -168,16 +188,70 @@ if menu == "📝 Input Kuesioner OPD":
         st.markdown("""
         ---
         ### 🎯 **Bagian 3: Pilihan Terpandu Opsi Strategis (Analisis Kualitatif)**
-        *Pilihlah satu opsi paling dominan untuk menggambarkan kondisi instansi Anda.*
+        *Pilihlah **maksimal 3 opsi** paling dominan pada setiap kategori untuk menggambarkan kondisi instansi Anda.*
         """)
+
+        # CSS: prevent long option text from being cut off in select box & dropdown
+        st.markdown(
+            """
+            <style>
+            /* Multi-select box grows vertically when several tags are chosen */
+            div[data-baseweb="select"] > div {
+                height: auto !important;
+                min-height: 2.6rem !important;
+            }
+            /* Selected tag chips: wrap long text instead of truncating */
+            div[data-baseweb="tag"] {
+                max-width: 100% !important;
+                height: auto !important;
+                margin: 2px 4px 2px 0 !important;
+            }
+            div[data-baseweb="tag"] span {
+                white-space: normal !important;
+                overflow-wrap: break-word !important;
+                word-break: break-word !important;
+                line-height: 1.3 !important;
+            }
+            /* Dropdown list options: wrap long text instead of cutting it off */
+            div[data-baseweb="popover"] ul[role="listbox"] li,
+            div[data-baseweb="popover"] ul[role="listbox"] li * {
+                white-space: normal !important;
+                overflow-wrap: break-word !important;
+                word-break: break-word !important;
+                height: auto !important;
+                line-height: 1.35 !important;
+            }
+            div[data-baseweb="popover"] ul[role="listbox"] li > div {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
         
         col_opt1, col_opt2, col_opt3 = st.columns(3)
         with col_opt1:
-            hambatan = st.selectbox("Hambatan Utama Instansi:", HAMBATAN_OPTIONS)
+            hambatan = st.multiselect(
+                "Hambatan Utama Instansi (maks. 3 opsi):",
+                HAMBATAN_OPTIONS,
+                max_selections=3,
+                placeholder="Klik untuk memilih hingga 3 hambatan..."
+            )
         with col_opt2:
-            dukungan = st.selectbox("Bentuk Komitmen Dukungan Riil:", DUKUNGAN_OPTIONS)
+            dukungan = st.multiselect(
+                "Bentuk Komitmen Dukungan Riil (maks. 3 opsi):",
+                DUKUNGAN_OPTIONS,
+                max_selections=3,
+                placeholder="Klik untuk memilih hingga 3 komitmen..."
+            )
         with col_opt3:
-            prioritas = st.selectbox("Prioritas Utama Program:", PRIORITAS_OPTIONS)
+            prioritas = st.multiselect(
+                "Prioritas Utama Program (maks. 3 opsi):",
+                PRIORITAS_OPTIONS,
+                max_selections=3,
+                placeholder="Klik untuk memilih hingga 3 prioritas..."
+            )
             
         st.markdown("---")
         st.markdown("### 💬 **Bagian 4: Catatan Bebas & Usulan Solusi**")
@@ -194,9 +268,9 @@ if menu == "📝 Input Kuesioner OPD":
                     "nama_responden": nama,
                     "jabatan": jabatan,
                     "instansi_opd": instansi,
-                    "hambatan_utama": hambatan,
-                    "komitmen_dukungan": dukungan,
-                    "prioritas_program": prioritas,
+                    "hambatan_utama": MULTI_SEPARATOR.join(hambatan),
+                    "komitmen_dukungan": MULTI_SEPARATOR.join(dukungan),
+                    "prioritas_program": MULTI_SEPARATOR.join(prioritas),
                     "catatan_bebas": catatan
                 }
                 # Add score values
@@ -273,24 +347,33 @@ elif menu == "📊 Quick Count Real-Time":
         
         with tab_h:
             st.markdown("#### **Frekuensi Hambatan Utama OPD**")
-            h_counts = df["hambatan_utama"].value_counts().reset_index()
-            h_counts.columns = ["Opsi Hambatan", "Jumlah OPD"]
-            st.bar_chart(h_counts.set_index("Opsi Hambatan"))
-            st.table(h_counts)
+            h_counts = count_multi_options(df["hambatan_utama"])
+            if not h_counts.empty:
+                h_counts.columns = ["Opsi Hambatan", "Jumlah OPD"]
+                st.bar_chart(h_counts.set_index("Opsi Hambatan"))
+                st.table(h_counts)
+            else:
+                st.info("Belum ada pilihan hambatan yang tercatat.")
             
         with tab_d:
             st.markdown("#### **Frekuensi Komitmen Dukungan Riil OPD**")
-            d_counts = df["komitmen_dukungan"].value_counts().reset_index()
-            d_counts.columns = ["Opsi Komitmen", "Jumlah OPD"]
-            st.bar_chart(d_counts.set_index("Opsi Komitmen"))
-            st.table(d_counts)
+            d_counts = count_multi_options(df["komitmen_dukungan"])
+            if not d_counts.empty:
+                d_counts.columns = ["Opsi Komitmen", "Jumlah OPD"]
+                st.bar_chart(d_counts.set_index("Opsi Komitmen"))
+                st.table(d_counts)
+            else:
+                st.info("Belum ada komitmen dukungan yang tercatat.")
             
         with tab_p:
             st.markdown("#### **Frekuensi Prioritas Utama Program**")
-            p_counts = df["prioritas_program"].value_counts().reset_index()
-            p_counts.columns = ["Opsi Prioritas", "Jumlah OPD"]
-            st.bar_chart(p_counts.set_index("Opsi Prioritas"))
-            st.table(p_counts)
+            p_counts = count_multi_options(df["prioritas_program"])
+            if not p_counts.empty:
+                p_counts.columns = ["Opsi Prioritas", "Jumlah OPD"]
+                st.bar_chart(p_counts.set_index("Opsi Prioritas"))
+                st.table(p_counts)
+            else:
+                st.info("Belum ada prioritas program yang tercatat.")
 
 # ---------------------------------------------------------
 # MENU 3: REKAPITULASI DATA RESPONDEN
