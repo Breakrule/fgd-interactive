@@ -15,6 +15,74 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# =========================================================
+# GLOBAL RESPONSIVE CSS (mobile-friendly layout)
+# =========================================================
+st.markdown("""
+<style>
+/* ---------- Small screens / tablets & phones (<= 768px) ---------- */
+@media (max-width: 768px) {
+    /* Tighter page padding, use full width */
+    div[data-testid="stMainBlockContainer"],
+    .block-container {
+        padding-left: 0.9rem !important;
+        padding-right: 0.9rem !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+        max-width: 100% !important;
+    }
+
+    /* Stack EVERY column group vertically instead of squeezing side-by-side */
+    div[data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"],
+    div[data-testid="stHorizontalBlock"] > div {
+        width: 100% !important;
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    /* Shrink the big dashboard headers */
+    .main-header { font-size: 1.35rem !important; line-height: 1.25 !important; }
+    .sub-header { font-size: 0.85rem !important; }
+
+    /* Compact metric (KPI) cards */
+    div[data-testid="stMetric"], .stMetric { padding: 10px 12px !important; }
+    div[data-testid="stMetricLabel"] { font-size: 0.78rem !important; }
+    div[data-testid="stMetricValue"] { font-size: 1.25rem !important; }
+
+    /* Wide tables scroll inside the viewport instead of overflowing */
+    div[data-testid="stDataFrame"], div[data-testid="stTable"] {
+        overflow-x: auto !important;
+    }
+
+    /* Break long words so nothing pushes the layout sideways */
+    .stMarkdown p, .stMarkdown li, td, th, .stText {
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+    }
+
+    /* Full-width buttons for easier tapping */
+    .stButton > button,
+    div[data-testid="stFormSubmitButton"] > button,
+    div[data-testid="stDownloadButton"] > button {
+        width: 100% !important;
+    }
+}
+
+/* ---------- Extra-small phones (<= 480px) ---------- */
+@media (max-width: 480px) {
+    .main-header { font-size: 1.15rem !important; }
+    h1 { font-size: 1.45rem !important; }
+    h2 { font-size: 1.25rem !important; }
+    h3 { font-size: 1.1rem !important; }
+    div[data-testid="stMetricValue"] { font-size: 1.1rem !important; }
+}
+</style>
+""", unsafe_allow_html=True)
+
 DATA_FILE = "data_kuesioner_fgd.csv"
 
 # Separator used to join multiple selected options into a single CSV cell
