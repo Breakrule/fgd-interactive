@@ -685,9 +685,21 @@ else:
     # === DOCX Export ===
     with col_docx:
         def generate_docx():
+            from docx.enum.section import WD_ORIENT
+            from docx.oxml.ns import qn, nsdecls
+            from docx.oxml import parse_xml
+            
             doc = Document()
             
-            # Set margins
+            # Set default font to Times New Roman 12pt (legal standard)
+            style = doc.styles['Normal']
+            font = style.font
+            font.name = 'Times New Roman'
+            font.size = Pt(12)
+            style.paragraph_format.space_after = Pt(6)
+            style.paragraph_format.line_spacing = 1.15
+            
+            # Set margins (legal standard: 3cm left, 2.5cm top/bottom/right)
             for section in doc.sections:
                 section.top_margin = Cm(2.5)
                 section.bottom_margin = Cm(2.5)
@@ -695,82 +707,217 @@ else:
                 section.right_margin = Cm(2.5)
             
             # Title
-            title = doc.add_heading(berita_acara_title, level=1)
-            title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            title_p = doc.add_paragraph()
+            title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            title_run = title_p.add_run(berita_acara_title)
+            title_run.bold = True
+            title_run.font.size = Pt(14)
+            title_run.font.name = 'Times New Roman'
+            title_p.paragraph_format.space_after = Pt(4)
+            
+            # Underline below title
+            underline_p = doc.add_paragraph()
+            underline_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            underline_p.paragraph_format.space_after = Pt(16)
+            pPr = underline_p._p.get_or_add_pPr()
+            pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:bottom w:val="single" w:sz="12" w:space="1" w:color="000000"/></w:pBdr>')
+            pPr.append(pBdr)
             
             # Body
             p = doc.add_paragraph(berita_acara_body)
-            p.paragraph_format.space_after = Pt(12)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            p.paragraph_format.space_after = Pt(12)
+            p.paragraph_format.first_line_indent = Cm(1.25)
             
             # Kesepakatan points
-            doc.add_paragraph("Poin-Poin Kesepakatan Utama:", style="Heading 3")
-            for point in kesepakatan_points:
-                p = doc.add_paragraph(point, style="List Number")
-                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            heading_p = doc.add_paragraph()
+            heading_run = heading_p.add_run("Poin-Poin Kesepakatan Utama:")
+            heading_run.bold = True
+            heading_run.font.size = Pt(12)
+            heading_run.font.name = 'Times New Roman'
+            heading_p.paragraph_format.space_after = Pt(6)
             
-            doc.add_paragraph()
+            for i, point in enumerate(kesepakatan_points, 1):
+                p = doc.add_paragraph()
+                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                p.paragraph_format.left_indent = Cm(1)
+                p.paragraph_format.space_after = Pt(8)
+                p.add_run(f"{i}. {point}")
+            
+            # Penutup
             p = doc.add_paragraph(penutup)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            p.paragraph_format.space_before = Pt(12)
+            p.paragraph_format.space_after = Pt(16)
+            p.paragraph_format.first_line_indent = Cm(1.25)
             
-            # Signatories
-            doc.add_paragraph()
-            doc.add_heading("Daftar Pihak yang Menyetujui:", level=3)
+            # Page break before signatories to keep section together
+            doc.add_page_break()
             
+            # Signatories heading
+            sign_heading = doc.add_paragraph()
+            sign_run = sign_heading.add_run("Daftar Pihak yang Menyetujui:")
+            sign_run.bold = True
+            sign_run.font.size = Pt(12)
+            sign_run.font.name = 'Times New Roman'
+            sign_heading.paragraph_format.space_after = Pt(12)
+            
+            # Signatories table (borderless)
             table = doc.add_table(rows=1, cols=2)
-            table.style = "Table Grid"
+            table.autofit = True
+            
+            # Remove borders
+            tbl = table._tbl
+            tblPr = tbl.tblPr if tbl.tblPr is not None else parse_xml(f'<w:tblPr {nsdecls("w")}/>')
+            borders = parse_xml(
+                f'<w:tblBorders {nsdecls("w")}>'
+                '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '</w:tblBorders>'
+            )
+            tblPr.append(borders)
             
             # Header row
             hdr = table.rows[0].cells
-            hdr[0].text = "Pemerintah Kabupaten Kotabaru"
-            hdr[1].text = "Mitra Jaringan & Provinsi"
-            for cell in hdr:
-                for paragraph in cell.paragraphs:
-                    paragraph.runs[0].bold = True
+            hdr[0].text = ""
+            hdr[1].text = ""
+            p0 = hdr[0].paragraphs[0]
+            run0 = p0.add_run("Pemerintah Kabupaten Kotabaru")
+            run0.bold = True
+            run0.font.name = 'Times New Roman'
+            run0.font.size = Pt(11)
+            p1 = hdr[1].paragraphs[0]
+            run1 = p1.add_run("Mitra Jaringan & Provinsi")
+            run1.bold = True
+            run1.font.name = 'Times New Roman'
+            run1.font.size = Pt(11)
             
             # Content rows
             max_rows = max(len(pihak_pemkab), len(pihak_mitra))
             for i in range(max_rows):
                 row = table.add_row().cells
-                row[0].text = f"- {pihak_pemkab[i]}" if i < len(pihak_pemkab) else ""
-                row[1].text = f"- {pihak_mitra[i]}" if i < len(pihak_mitra) else ""
+                left_text = f"- {pihak_pemkab[i]}" if i < len(pihak_pemkab) else ""
+                right_text = f"- {pihak_mitra[i]}" if i < len(pihak_mitra) else ""
+                row[0].paragraphs[0].add_run(left_text).font.name = 'Times New Roman'
+                row[1].paragraphs[0].add_run(right_text).font.name = 'Times New Roman'
+                for cell in row:
+                    for para in cell.paragraphs:
+                        para.paragraph_format.space_after = Pt(2)
+                        for run in para.runs:
+                            run.font.size = Pt(11)
             
-            # Signature area
-            doc.add_paragraph()
-            doc.add_paragraph()
-            sig_table = doc.add_table(rows=3, cols=2)
-            sig_table.rows[0].cells[0].text = "Kotabaru, 23 September 2026"
-            sig_table.rows[2].cells[0].text = "(___________________________)"
-            sig_table.rows[2].cells[1].text = "(___________________________)"
+            # Signature block (right-aligned, standard legal format)
+            doc.add_paragraph()  # spacing
             
-            # Include matrix if requested
+            sig_table = doc.add_table(rows=4, cols=2)
+            # Remove borders from sig table
+            tbl2 = sig_table._tbl
+            tblPr2 = tbl2.tblPr if tbl2.tblPr is not None else parse_xml(f'<w:tblPr {nsdecls("w")}/>')
+            borders2 = parse_xml(
+                f'<w:tblBorders {nsdecls("w")}>'
+                '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                '</w:tblBorders>'
+            )
+            tblPr2.append(borders2)
+            
+            # Date on right column
+            sig_table.rows[0].cells[0].text = ""
+            date_p = sig_table.rows[0].cells[1].paragraphs[0]
+            date_run = date_p.add_run("Kotabaru, 23 September 2026")
+            date_run.font.name = 'Times New Roman'
+            date_run.font.size = Pt(11)
+            
+            # Empty rows for signature space
+            sig_table.rows[1].cells[0].text = ""
+            sig_table.rows[1].cells[1].text = ""
+            sig_table.rows[2].cells[0].text = ""
+            sig_table.rows[2].cells[1].text = ""
+            
+            # Signature line on right
+            sig_table.rows[3].cells[0].text = ""
+            sig_p = sig_table.rows[3].cells[1].paragraphs[0]
+            sig_run = sig_p.add_run("(___________________________)")
+            sig_run.font.name = 'Times New Roman'
+            sig_run.font.size = Pt(11)
+            
+            # Set row heights for signature space
+            from docx.oxml import OxmlElement
+            for i in range(1, 3):
+                tr = sig_table.rows[i]._tr
+                trPr = tr.get_or_add_trPr()
+                trHeight = OxmlElement('w:trHeight')
+                trHeight.set(qn('w:val'), '720')  # ~1.27cm per row
+                trHeight.set(qn('w:hRule'), 'atLeast')
+                trPr.append(trHeight)
+            
+            # Include matrix if requested (landscape section)
             if include_matrix:
-                doc.add_page_break()
-                doc.add_heading("LAMPIRAN: Matriks Road Map Geopark Kotabaru V3", level=2)
+                # Add new section with landscape orientation
+                new_section = doc.add_section()
+                new_section.orientation = WD_ORIENT.LANDSCAPE
+                new_section.page_width = Cm(29.7)
+                new_section.page_height = Cm(21)
+                new_section.top_margin = Cm(1.5)
+                new_section.bottom_margin = Cm(1.5)
+                new_section.left_margin = Cm(1.5)
+                new_section.right_margin = Cm(1.5)
+                
+                lamp_heading = doc.add_paragraph()
+                lamp_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                lamp_run = lamp_heading.add_run("LAMPIRAN: Matriks Road Map Geopark Kotabaru V3")
+                lamp_run.bold = True
+                lamp_run.font.size = Pt(12)
+                lamp_run.font.name = 'Times New Roman'
+                lamp_heading.paragraph_format.space_after = Pt(12)
                 
                 df = pd.DataFrame(st.session_state.matrix_data)
-                pdf_cols = ["No", "Pilar Utama", "Nama Program / Kegiatan", "OPD Lead", "KPI", "Timeline"]
+                docx_cols = ["No", "Pilar Utama", "Aspek Fungsional", "Nama Program / Kegiatan", "OPD Lead", "KPI", "Timeline"]
                 
-                matrix_table = doc.add_table(rows=1, cols=len(pdf_cols))
+                matrix_table = doc.add_table(rows=1, cols=len(docx_cols))
                 matrix_table.style = "Table Grid"
+                matrix_table.autofit = True
                 
-                # Header
-                for i, col_name in enumerate(pdf_cols):
-                    matrix_table.rows[0].cells[i].text = col_name
-                    for paragraph in matrix_table.rows[0].cells[i].paragraphs:
-                        paragraph.runs[0].bold = True
+                # Header row with shading
+                for i, col_name in enumerate(docx_cols):
+                    cell = matrix_table.rows[0].cells[i]
+                    cell.text = ""
+                    p = cell.paragraphs[0]
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run = p.add_run(col_name)
+                    run.bold = True
+                    run.font.size = Pt(8)
+                    run.font.name = 'Times New Roman'
+                    # Gray shading
+                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="D9D9D9" w:val="clear"/>')
+                    cell._tc.get_or_add_tcPr().append(shading)
                 
                 # Data rows
                 for _, row_data in df.iterrows():
                     row = matrix_table.add_row().cells
-                    for i, col_name in enumerate(pdf_cols):
-                        row[i].text = str(row_data[col_name])
+                    for i, col_name in enumerate(docx_cols):
+                        row[i].text = ""
+                        p = row[i].paragraphs[0]
+                        run = p.add_run(str(row_data[col_name]))
+                        run.font.size = Pt(8)
+                        run.font.name = 'Times New Roman'
+                        p.paragraph_format.space_after = Pt(0)
+                        p.paragraph_format.space_before = Pt(0)
                 
-                # Set font size for table
-                for row in matrix_table.rows:
-                    for cell in row.cells:
-                        for paragraph in cell.paragraphs:
-                            paragraph.style.font.size = Pt(8)
+                # Repeat header row on page break
+                tr = matrix_table.rows[0]._tr
+                trPr = tr.get_or_add_trPr()
+                tblHeader = OxmlElement('w:tblHeader')
+                tblHeader.set(qn('w:val'), 'true')
+                trPr.append(tblHeader)
             
             # Save to bytes
             buffer = io.BytesIO()
