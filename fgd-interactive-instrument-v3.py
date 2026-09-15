@@ -708,8 +708,7 @@ def render_cgk_dashboard(view_mode):
 
 # App UI
 st.sidebar.image("https://img.icons8.com/color/96/earth-element.png", width=80)
-st.sidebar.title("FGD Geopark Kotabaru")
-st.sidebar.caption("Kabupaten Kotabaru - Klaster Saijaan Bersujud")
+st.sidebar.title("Dashboard Geopark Kotabaru")
 st.sidebar.markdown("---")
 
 # Navigation option lists (two separate groups)
