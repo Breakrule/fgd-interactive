@@ -191,67 +191,73 @@ if menu == "📝 Input Kuesioner OPD":
         *Pilihlah **maksimal 3 opsi** paling dominan pada setiap kategori untuk menggambarkan kondisi instansi Anda.*
         """)
 
-        # CSS: prevent long option text from being cut off in select box & dropdown
+        # CSS: force FULL text visibility in multiselect tags & dropdown options
         st.markdown(
             """
             <style>
-            /* Multi-select box grows vertically when several tags are chosen */
+            /* Select container: let tags wrap onto multiple lines and grow */
             div[data-baseweb="select"] > div {
                 height: auto !important;
                 min-height: 2.6rem !important;
+                flex-wrap: wrap !important;
+                overflow: visible !important;
             }
-            /* Selected tag chips: wrap long text instead of truncating */
+            /* Selected tag chips: show the FULL text (kill ellipsis clipping) */
             div[data-baseweb="tag"] {
                 max-width: 100% !important;
                 height: auto !important;
                 margin: 2px 4px 2px 0 !important;
+                overflow: visible !important;
             }
-            div[data-baseweb="tag"] span {
+            div[data-baseweb="tag"] span,
+            div[data-baseweb="tag"] div {
                 white-space: normal !important;
-                overflow-wrap: break-word !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                overflow-wrap: anywhere !important;
                 word-break: break-word !important;
                 line-height: 1.3 !important;
+                max-width: 100% !important;
             }
-            /* Dropdown list options: wrap long text instead of cutting it off */
-            div[data-baseweb="popover"] ul[role="listbox"] li,
-            div[data-baseweb="popover"] ul[role="listbox"] li * {
+            /* Dropdown options: show FULL text (kill ellipsis clipping) */
+            div[data-baseweb="popover"] li,
+            div[data-baseweb="popover"] li div,
+            div[data-baseweb="popover"] li span {
                 white-space: normal !important;
-                overflow-wrap: break-word !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                overflow-wrap: anywhere !important;
                 word-break: break-word !important;
                 height: auto !important;
                 line-height: 1.35 !important;
             }
-            div[data-baseweb="popover"] ul[role="listbox"] li > div {
-                padding-top: 8px !important;
-                padding-bottom: 8px !important;
+            div[data-baseweb="popover"] li {
+                padding-top: 6px !important;
+                padding-bottom: 6px !important;
             }
             </style>
             """,
             unsafe_allow_html=True
         )
         
-        col_opt1, col_opt2, col_opt3 = st.columns(3)
-        with col_opt1:
-            hambatan = st.multiselect(
-                "Hambatan Utama Instansi (maks. 3 opsi):",
-                HAMBATAN_OPTIONS,
-                max_selections=3,
-                placeholder="Klik untuk memilih hingga 3 hambatan..."
-            )
-        with col_opt2:
-            dukungan = st.multiselect(
-                "Bentuk Komitmen Dukungan Riil (maks. 3 opsi):",
-                DUKUNGAN_OPTIONS,
-                max_selections=3,
-                placeholder="Klik untuk memilih hingga 3 komitmen..."
-            )
-        with col_opt3:
-            prioritas = st.multiselect(
-                "Prioritas Utama Program (maks. 3 opsi):",
-                PRIORITAS_OPTIONS,
-                max_selections=3,
-                placeholder="Klik untuk memilih hingga 3 prioritas..."
-            )
+        hambatan = st.multiselect(
+            "Hambatan Utama Instansi (maks. 3 opsi):",
+            HAMBATAN_OPTIONS,
+            max_selections=3,
+            placeholder="Klik untuk memilih hingga 3 hambatan..."
+        )
+        dukungan = st.multiselect(
+            "Bentuk Komitmen Dukungan Riil (maks. 3 opsi):",
+            DUKUNGAN_OPTIONS,
+            max_selections=3,
+            placeholder="Klik untuk memilih hingga 3 komitmen..."
+        )
+        prioritas = st.multiselect(
+            "Prioritas Utama Program (maks. 3 opsi):",
+            PRIORITAS_OPTIONS,
+            max_selections=3,
+            placeholder="Klik untuk memilih hingga 3 prioritas..."
+        )
             
         st.markdown("---")
         st.markdown("### 💬 **Bagian 4: Catatan Bebas & Usulan Solusi**")
