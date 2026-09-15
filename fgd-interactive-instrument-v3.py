@@ -527,84 +527,142 @@ else:
     with col_pdf:
         def generate_pdf():
             pdf = FPDF()
+            pdf.set_auto_page_break(auto=True, margin=25)
+            
+            # --- Page 1: Berita Acara (Portrait, legal margins) ---
             pdf.add_page()
-            pdf.set_auto_page_break(auto=True, margin=20)
+            pdf.set_margins(left=30, top=25, right=25)  # Standard legal: 3cm left, 2.5cm top/right
+            pdf.set_y(25)
             
             # Title
             pdf.set_font("Helvetica", "B", 14)
-            pdf.cell(0, 10, berita_acara_title, ln=True, align="C")
-            pdf.ln(5)
+            pdf.multi_cell(0, 8, berita_acara_title, align="C")
+            pdf.ln(3)
+            
+            # Underline
+            pdf.set_draw_color(0, 0, 0)
+            pdf.set_line_width(0.5)
+            x_start = pdf.get_x()
+            y_line = pdf.get_y()
+            pdf.line(x_start + 20, y_line, x_start + 135, y_line)
+            pdf.ln(8)
             
             # Body
             pdf.set_font("Helvetica", "", 11)
-            pdf.multi_cell(0, 6, berita_acara_body)
-            pdf.ln(4)
+            pdf.multi_cell(0, 6, berita_acara_body, align="J")
+            pdf.ln(6)
             
             # Kesepakatan points
             pdf.set_font("Helvetica", "B", 11)
-            pdf.cell(0, 8, "Poin-Poin Kesepakatan Utama:", ln=True)
+            pdf.cell(0, 8, "Poin-Poin Kesepakatan Utama:", new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(2)
             pdf.set_font("Helvetica", "", 11)
             for i, point in enumerate(kesepakatan_points, 1):
-                pdf.multi_cell(0, 6, f"{i}. {point}")
-                pdf.ln(2)
+                pdf.multi_cell(0, 6, f"{i}. {point}", align="J")
+                pdf.ln(3)
             
-            pdf.ln(3)
-            pdf.multi_cell(0, 6, penutup)
-            pdf.ln(10)
+            pdf.ln(4)
+            pdf.multi_cell(0, 6, penutup, align="J")
+            pdf.ln(12)
             
-            # Signatories
+            # Signatories section
             pdf.set_font("Helvetica", "B", 11)
-            pdf.cell(0, 8, "Daftar Pihak yang Menyetujui:", ln=True)
-            pdf.ln(3)
+            pdf.cell(0, 8, "Daftar Pihak yang Menyetujui:", new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(4)
+            
+            usable_width = 210 - 30 - 25  # page width - left margin - right margin = 155mm
+            half_w = usable_width / 2
             
             pdf.set_font("Helvetica", "B", 10)
-            pdf.cell(95, 7, "Pemerintah Kabupaten Kotabaru:", ln=False)
-            pdf.cell(95, 7, "Mitra Jaringan & Provinsi:", ln=True)
+            pdf.cell(half_w, 7, "Pemerintah Kabupaten Kotabaru:", new_x="END", new_y="TOP")
+            pdf.cell(half_w, 7, "Mitra Jaringan & Provinsi:", new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(1)
             pdf.set_font("Helvetica", "", 10)
             
             max_rows = max(len(pihak_pemkab), len(pihak_mitra))
             for i in range(max_rows):
                 left = f"- {pihak_pemkab[i]}" if i < len(pihak_pemkab) else ""
                 right = f"- {pihak_mitra[i]}" if i < len(pihak_mitra) else ""
-                pdf.cell(95, 6, left, ln=False)
-                pdf.cell(95, 6, right, ln=True)
+                pdf.cell(half_w, 6, left, new_x="END", new_y="TOP")
+                pdf.cell(half_w, 6, right, new_x="LMARGIN", new_y="NEXT")
             
-            pdf.ln(15)
-            pdf.set_font("Helvetica", "", 10)
-            pdf.cell(95, 6, "Kotabaru, 23 September 2026", ln=False)
-            pdf.cell(95, 6, "", ln=True)
+            # Signature block
             pdf.ln(20)
-            pdf.cell(95, 6, "(___________________________)", ln=False)
-            pdf.cell(95, 6, "(___________________________)", ln=True)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.cell(half_w, 6, "", new_x="END", new_y="TOP")
+            pdf.cell(half_w, 6, "Kotabaru, 23 September 2026", new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(25)
+            pdf.cell(half_w, 6, "", new_x="END", new_y="TOP")
+            pdf.cell(half_w, 6, "(___________________________)", new_x="LMARGIN", new_y="NEXT")
             
-            # Include matrix table if requested
+            # --- Page 2+: Matrix Table (Landscape for more space) ---
             if include_matrix:
-                pdf.add_page()
+                pdf.add_page(orientation="L")
+                pdf.set_margins(left=15, top=15, right=15)
+                pdf.set_auto_page_break(auto=True, margin=15)
+                pdf.set_y(15)
+                
                 pdf.set_font("Helvetica", "B", 12)
-                pdf.cell(0, 10, "LAMPIRAN: Matriks Road Map Geopark Kotabaru V3", ln=True, align="C")
-                pdf.ln(3)
+                pdf.cell(0, 10, "LAMPIRAN: Matriks Road Map Geopark Kotabaru V3", new_x="LMARGIN", new_y="NEXT", align="C")
+                pdf.ln(5)
                 
                 df = pd.DataFrame(st.session_state.matrix_data)
-                # Use simpler columns for PDF table
-                pdf_cols = ["No", "Pilar Utama", "Nama Program / Kegiatan", "OPD Lead", "Timeline"]
-                col_widths = [10, 40, 70, 40, 30]
+                pdf_cols = ["No", "Pilar Utama", "Aspek Fungsional", "Nama Program / Kegiatan", "OPD Lead", "KPI", "Timeline"]
+                # Landscape A4 usable: 297 - 15 - 15 = 267mm
+                col_widths = [8, 35, 30, 60, 35, 55, 44]  # total = 267mm
                 
-                pdf.set_font("Helvetica", "B", 7)
+                line_h = 5
+                font_size = 7
+                
+                # Table header
+                pdf.set_font("Helvetica", "B", font_size)
+                pdf.set_fill_color(220, 220, 220)
                 for i, col_name in enumerate(pdf_cols):
-                    pdf.cell(col_widths[i], 6, col_name, border=1, align="C")
+                    pdf.cell(col_widths[i], line_h + 2, col_name, border=1, align="C", fill=True)
                 pdf.ln()
                 
-                pdf.set_font("Helvetica", "", 7)
+                # Table body with text wrapping
+                pdf.set_font("Helvetica", "", font_size)
                 for _, row in df.iterrows():
-                    max_h = 6
-                    row_data = []
-                    for col_name in pdf_cols:
-                        text = str(row[col_name])[:45]  # Truncate long text
-                        row_data.append(text)
+                    # Calculate max lines needed for this row
+                    max_lines = 1
+                    cell_texts = []
+                    for i, col_name in enumerate(pdf_cols):
+                        text = str(row[col_name])
+                        cell_texts.append(text)
+                        # Estimate lines needed
+                        char_per_line = int(col_widths[i] / (font_size * 0.5))
+                        lines_needed = max(1, -(-len(text) // char_per_line))  # ceiling division
+                        max_lines = max(max_lines, lines_needed)
                     
-                    for i, text in enumerate(row_data):
-                        pdf.cell(col_widths[i], max_h, text, border=1)
-                    pdf.ln()
+                    row_height = line_h * max_lines
+                    
+                    # Check page break
+                    if pdf.get_y() + row_height > 195:  # landscape height - bottom margin
+                        pdf.add_page(orientation="L")
+                        pdf.set_margins(left=15, top=15, right=15)
+                        pdf.set_y(15)
+                        # Reprint header
+                        pdf.set_font("Helvetica", "B", font_size)
+                        pdf.set_fill_color(220, 220, 220)
+                        for i, col_name in enumerate(pdf_cols):
+                            pdf.cell(col_widths[i], line_h + 2, col_name, border=1, align="C", fill=True)
+                        pdf.ln()
+                        pdf.set_font("Helvetica", "", font_size)
+                    
+                    # Draw cells with multi_cell for wrapping
+                    x_start = pdf.get_x()
+                    y_start = pdf.get_y()
+                    
+                    for i, text in enumerate(cell_texts):
+                        pdf.set_xy(x_start + sum(col_widths[:i]), y_start)
+                        # Draw border rectangle
+                        pdf.rect(x_start + sum(col_widths[:i]), y_start, col_widths[i], row_height)
+                        # Draw text inside with padding
+                        pdf.set_xy(x_start + sum(col_widths[:i]) + 1, y_start + 1)
+                        pdf.multi_cell(col_widths[i] - 2, line_h, text, align="L")
+                    
+                    pdf.set_y(y_start + row_height)
             
             return bytes(pdf.output())
         
