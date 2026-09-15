@@ -563,12 +563,19 @@ else:
             
             pdf.ln(4)
             pdf.multi_cell(0, 6, penutup, align="J")
-            pdf.ln(12)
+            pdf.ln(8)
             
-            # Signatories section
+            # Signatories section - keep together on same page
+            # Estimate space needed: ~100mm for full sign block
+            sign_block_height = 100
+            if pdf.get_y() + sign_block_height > 272:  # 297 - 25 bottom margin
+                pdf.add_page()
+                pdf.set_margins(left=30, top=25, right=25)
+                pdf.set_y(25)
+            
             pdf.set_font("Helvetica", "B", 11)
             pdf.cell(0, 8, "Daftar Pihak yang Menyetujui:", new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(4)
+            pdf.ln(3)
             
             usable_width = 210 - 30 - 25  # page width - left margin - right margin = 155mm
             half_w = usable_width / 2
@@ -587,11 +594,11 @@ else:
                 pdf.cell(half_w, 6, right, new_x="LMARGIN", new_y="NEXT")
             
             # Signature block
-            pdf.ln(20)
+            pdf.ln(12)
             pdf.set_font("Helvetica", "", 10)
             pdf.cell(half_w, 6, "", new_x="END", new_y="TOP")
             pdf.cell(half_w, 6, "Kotabaru, 23 September 2026", new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(25)
+            pdf.ln(18)
             pdf.cell(half_w, 6, "", new_x="END", new_y="TOP")
             pdf.cell(half_w, 6, "(___________________________)", new_x="LMARGIN", new_y="NEXT")
             
