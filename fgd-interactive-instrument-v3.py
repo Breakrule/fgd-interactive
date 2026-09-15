@@ -20,6 +20,9 @@ DATA_FILE = "data_kuesioner_fgd.csv"
 # Separator used to join multiple selected options into a single CSV cell
 MULTI_SEPARATOR = " | "
 
+# Password required to delete saved questionnaire data
+DELETE_PASSWORD = "caca1234"
+
 # Predefined Questions Definition
 QUESTIONS = [
     {"id": "Q_01", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Pemerintah daerah dan masyarakat memiliki kesadaran tinggi untuk menjaga warisan batuan/geologi di Kotabaru agar terhindar dari perusakan."},
@@ -103,6 +106,18 @@ def save_response(row_dict):
     df_new = pd.DataFrame([row_dict])
     df_updated = pd.concat([df, df_new], ignore_index=True)
     df_updated.to_csv(DATA_FILE, index=False)
+
+# Helper function to delete ALL saved questionnaire data
+def delete_all_data():
+    if os.path.exists(DATA_FILE):
+        os.remove(DATA_FILE)
+
+# Helper function to delete a single record by its DataFrame index
+def delete_record(index):
+    df = load_data()
+    if index in df.index:
+        df = df.drop(index=index).reset_index(drop=True)
+        df.to_csv(DATA_FILE, index=False)
 
 # Helper function to count multi-select options stored as joined strings
 def count_multi_options(series, separator=MULTI_SEPARATOR):
@@ -1014,6 +1029,11 @@ else:
     
     df = load_data()
     
+    # Flash confirmation that survives the rerun after a successful deletion
+    if "delete_flash" in st.session_state:
+        st.success(st.session_state.delete_flash)
+        del st.session_state.delete_flash
+    
     if df.empty:
         st.info("📥 Belum ada data kuesioner yang tersimpan.")
     else:
@@ -1027,6 +1047,50 @@ else:
             file_name=f"kuesioner_fgd_geopark_kotabaru_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
             mime="text/csv"
         )
+        
+        # ---- Password-protected delete ----
+        st.markdown("---")
+        with st.expander("🗑️ Hapus Data Tersimpan (Dilindungi Kata Sandi)"):
+            st.warning("⚠️ **Tindakan ini permanen.** Data yang dihapus tidak dapat dikembalikan.")
+            
+            delete_mode = st.radio(
+                "Mode penghapusan:",
+                ["Hapus SATU data responden", "Hapus SEMUA data responden"],
+                horizontal=True,
+                key="delete_mode"
+            )
+            
+            target_index = None
+            if delete_mode == "Hapus SATU data responden":
+                record_options = {
+                    f"[{i}] {row['timestamp']} — {row['nama_responden']} ({row['instansi_opd']})": i
+                    for i, row in df.iterrows()
+                }
+                selected_label = st.selectbox(
+                    "Pilih data responden yang ingin dihapus:",
+                    list(record_options.keys()),
+                    key="delete_target"
+                )
+                target_index = record_options[selected_label]
+            
+            del_password = st.text_input(
+                "Kata sandi penghapusan:",
+                type="password",
+                placeholder="Masukkan kata sandi admin",
+                key="delete_password"
+            )
+            
+            if st.button("🗑️ Konfirmasi Hapus", type="primary", key="delete_confirm"):
+                if del_password != DELETE_PASSWORD:
+                    st.error("❌ Kata sandi salah! Penghapusan dibatalkan.")
+                else:
+                    if delete_mode == "Hapus SEMUA data responden":
+                        delete_all_data()
+                        st.session_state.delete_flash = "✅ SEMUA data responden berhasil dihapus."
+                    else:
+                        delete_record(target_index)
+                        st.session_state.delete_flash = "✅ Data responden terpilih berhasil dihapus."
+                    st.rerun()
         
         st.markdown("---")
         st.markdown("### 💬 **Daftar Catatan & Usulan Bebas OPD**")
