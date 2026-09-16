@@ -4,3 +4,6 @@ __pycache__/
 
 # Runtime-generated questionnaire data (may contain respondent info)
 data_kuesioner_fgd.csv
+
+# Streamlit secrets (Google service-account credentials) - NEVER commit
+.streamlit/secrets.toml

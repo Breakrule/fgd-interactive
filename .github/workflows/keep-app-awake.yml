@@ -1,0 +1,46 @@
+name: Keep Streamlit App Awake
+
+# Runs on a schedule (times are UTC) and can also be triggered manually.
+on:
+  schedule:
+    # Every ~15 minutes, on off-peak minutes to reduce GitHub scheduled-run delays
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch: {}
+
+# Never let ping runs pile up on top of each other
+concurrency:
+  group: keep-awake
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Ping the Streamlit app to keep it warm
+        env:
+          APP_URL: ${{ vars.STREAMLIT_APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "::error::Repository variable 'STREAMLIT_APP_URL' is not set."
+            echo "Set it in: Settings > Secrets and variables > Actions > Variables tab."
+            echo "Example value: https://your-app.streamlit.app"
+            exit 1
+          fi
+
+          echo "Pinging $APP_URL to keep the Streamlit Cloud app awake..."
+          # The first request often returns 503 while the app boots; retry a few times.
+          for attempt in 1 2 3 4; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -L \
+              -A "Mozilla/5.0 (GitHub-Actions keep-awake bot)" \
+              --max-time 90 "$APP_URL" || echo "000")
+            echo "Attempt ${attempt}: HTTP ${code}"
+            if [ "$code" = "200" ]; then
+              echo "App is awake and responding."
+              exit 0
+            fi
+            echo "Not ready yet (app may be booting). Waiting 25s..."
+            sleep 25
+          done
+
+          echo "::warning::App did not return HTTP 200 after retries; it may still be waking up."

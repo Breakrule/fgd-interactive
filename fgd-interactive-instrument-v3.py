@@ -83,7 +83,18 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Local CSV file - used ONLY as a fallback when Google Sheets is not configured.
+# NOTE: On Streamlit Community Cloud this file is EPHEMERAL (wiped on every restart).
 DATA_FILE = "data_kuesioner_fgd.csv"
+
+# Column schema shared by the Google Sheet and the local CSV fallback
+SHEET_COLUMNS = [
+    "timestamp", "nama_responden", "jabatan", "instansi_opd",
+    "Q_01", "Q_02", "Q_03", "Q_04", "Q_05", "Q_06", "Q_07", "Q_08",
+    "Q_09", "Q_10", "Q_11", "Q_12", "Q_13", "Q_14", "Q_15",
+    "hambatan_utama", "komitmen_dukungan", "prioritas_program", "catatan_bebas"
+]
+Q_COLUMNS = [f"Q_{i:02d}" for i in range(1, 16)]
 
 # Separator used to join multiple selected options into a single CSV cell
 MULTI_SEPARATOR = " | "
@@ -154,38 +165,89 @@ PRIORITAS_OPTIONS = [
     "Lainnya (Tulis pada Catatan Bebas)"
 ]
 
+# =========================================================
+# DATA LAYER: Google Sheets (persistent) with local CSV fallback
+# =========================================================
+def sheets_enabled():
+    """True when Google Sheets credentials + URL exist in Streamlit secrets."""
+    try:
+        return bool(st.secrets.get("gsheet_url")) and ("gsheet_service_account" in st.secrets)
+    except Exception:
+        return False
+
+
+@st.cache_resource(show_spinner=False)
+def _get_worksheet():
+    """Authorize with the service account and return the first worksheet."""
+    import gspread
+    from google.oauth2.service_account import Credentials
+    sa = st.secrets["gsheet_service_account"]
+    sa_info = {k: sa[k] for k in sa}
+    creds = Credentials.from_service_account_info(
+        sa_info, scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    client = gspread.authorize(creds)
+    return client.open_by_url(st.secrets["gsheet_url"]).sheet1
+
+
+def _ensure_sheet_header(ws):
+    """Write the header row once if the sheet is empty or headers are missing."""
+    first = ws.row_values(1)
+    if not first or str(first[0]).strip() != SHEET_COLUMNS[0]:
+        for col_idx, name in enumerate(SHEET_COLUMNS, start=1):
+            ws.update_cell(1, col_idx, name)
+
+
 # Helper function to load dataset
 def load_data():
+    if sheets_enabled():
+        ws = _get_worksheet()
+        _ensure_sheet_header(ws)
+        records = ws.get_all_records()
+        df = pd.DataFrame(records, columns=SHEET_COLUMNS)
+        for c in Q_COLUMNS:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+        return df
+    # Local CSV fallback (ephemeral on Streamlit Community Cloud)
     if os.path.exists(DATA_FILE):
-        return pd.read_csv(DATA_FILE)
-    else:
-        # Create empty DataFrame with required schema
-        columns = [
-            "timestamp", "nama_responden", "jabatan", "instansi_opd",
-            "Q_01", "Q_02", "Q_03", "Q_04", "Q_05", "Q_06", "Q_07", "Q_08",
-            "Q_09", "Q_10", "Q_11", "Q_12", "Q_13", "Q_14", "Q_15",
-            "hambatan_utama", "komitmen_dukungan", "prioritas_program", "catatan_bebas"
-        ]
-        return pd.DataFrame(columns=columns)
+        return pd.read_csv(DATA_FILE).reindex(columns=SHEET_COLUMNS)
+    return pd.DataFrame(columns=SHEET_COLUMNS)
 
-# Helper function to save dataset
+
+# Helper function to save one response
 def save_response(row_dict):
-    df = load_data()
-    df_new = pd.DataFrame([row_dict])
-    df_updated = pd.concat([df, df_new], ignore_index=True)
-    df_updated.to_csv(DATA_FILE, index=False)
+    if sheets_enabled():
+        ws = _get_worksheet()
+        _ensure_sheet_header(ws)
+        ws.append_row([row_dict.get(c, "") for c in SHEET_COLUMNS], value_input_option="USER_ENTERED")
+        return
+    df = pd.concat([load_data(), pd.DataFrame([row_dict])], ignore_index=True)
+    df.to_csv(DATA_FILE, index=False)
+
 
 # Helper function to delete ALL saved questionnaire data
 def delete_all_data():
+    if sheets_enabled():
+        ws = _get_worksheet()
+        _ensure_sheet_header(ws)
+        n = len(ws.get_all_records())
+        if n > 0:
+            ws.delete_rows(2, n)  # keep the header row, remove all data rows
+        return
     if os.path.exists(DATA_FILE):
         os.remove(DATA_FILE)
 
+
 # Helper function to delete a single record by its DataFrame index
 def delete_record(index):
+    if sheets_enabled():
+        ws = _get_worksheet()
+        _ensure_sheet_header(ws)
+        ws.delete_rows(int(index) + 2)  # +1 header row, +1 for 1-based indexing
+        return
     df = load_data()
     if index in df.index:
-        df = df.drop(index=index).reset_index(drop=True)
-        df.to_csv(DATA_FILE, index=False)
+        df.drop(index=index).reset_index(drop=True).to_csv(DATA_FILE, index=False)
 
 # Helper function to count multi-select options stored as joined strings
 def count_multi_options(series, separator=MULTI_SEPARATOR):
@@ -835,6 +897,15 @@ st.sidebar.info(
     "💡 **Sistem Pemantauan Terpadu FGD**\n\n"
     "Aplikasi ini secara otomatis merekam masukan OPD dan menghitung analisis kesiapan daerah secara real-time."
 )
+
+# Storage-mode indicator (Google Sheets = persistent, CSV = ephemeral)
+if sheets_enabled():
+    st.sidebar.success("💾 Penyimpanan: **Google Sheets** (data persisten)")
+else:
+    st.sidebar.warning(
+        "⚠️ Penyimpanan lokal (CSV) — data **hilang** saat app restart. "
+        "Hubungkan Google Sheets di Streamlit secrets untuk penyimpanan permanen."
+    )
 
 # ---------------------------------------------------------
 # DASHBOARD MONITORING CGK (top navigation group)
