@@ -892,21 +892,6 @@ menu = st.sidebar.radio(
     on_change=_activate_kuesioner
 )
 
-st.sidebar.markdown("---")
-st.sidebar.info(
-    "💡 **Sistem Pemantauan Terpadu FGD**\n\n"
-    "Aplikasi ini secara otomatis merekam masukan OPD dan menghitung analisis kesiapan daerah secara real-time."
-)
-
-# Storage-mode indicator (Google Sheets = persistent, CSV = ephemeral)
-if sheets_enabled():
-    st.sidebar.success("💾 Penyimpanan: **Google Sheets** (data persisten)")
-else:
-    st.sidebar.warning(
-        "⚠️ Penyimpanan lokal (CSV) — data **hilang** saat app restart. "
-        "Hubungkan Google Sheets di Streamlit secrets untuk penyimpanan permanen."
-    )
-
 # ---------------------------------------------------------
 # DASHBOARD MONITORING CGK (top navigation group)
 # ---------------------------------------------------------
@@ -1170,13 +1155,48 @@ else:
         st.success(st.session_state.delete_flash)
         del st.session_state.delete_flash
     
+    # ---- Password gate protecting respondent identity columns ----
+    IDENTITY_COLS = ["nama_responden", "jabatan", "instansi_opd"]
+    MASK = "🔒 (terkunci)"
+    if "rekap_unlocked" not in st.session_state:
+        st.session_state.rekap_unlocked = False
+    unlocked = st.session_state.rekap_unlocked
+    
     if df.empty:
         st.info("📥 Belum ada data kuesioner yang tersimpan.")
     else:
-        st.dataframe(df, use_container_width=True)
+        with st.expander("🔒 Data Identitas Responden (nama, jabatan, instansi)"):
+            if unlocked:
+                st.success("✅ Data identitas terbuka pada sesi ini.")
+                if st.button("🔒 Kunci kembali", key="rekap_lock"):
+                    st.session_state.rekap_unlocked = False
+                    st.rerun()
+            else:
+                st.caption("Kolom nama_responden, jabatan, dan instansi_opd disamarkan sampai kata sandi yang benar dimasukkan.")
+                unlock_pw = st.text_input(
+                    "Kata sandi:",
+                    type="password",
+                    placeholder="Masukkan kata sandi",
+                    key="rekap_password"
+                )
+                if st.button("🔓 Buka Data Identitas", type="primary", key="rekap_unlock"):
+                    if unlock_pw == DELETE_PASSWORD:
+                        st.session_state.rekap_unlocked = True
+                        st.rerun()
+                    else:
+                        st.error("❌ Kata sandi salah!")
+        
+        # Masked copy used for display/download while locked
+        display_df = df.copy()
+        if not unlocked:
+            for c in IDENTITY_COLS:
+                if c in display_df.columns:
+                    display_df[c] = MASK
+        
+        st.dataframe(display_df, use_container_width=True)
         
         # Download button
-        csv = df.to_csv(index=False).encode('utf-8')
+        csv = display_df.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Download Seluruh Data Kuesioner (Format CSV / Excel)",
             data=csv,
@@ -1198,10 +1218,10 @@ else:
             
             target_index = None
             if delete_mode == "Hapus SATU data responden":
-                record_options = {
-                    f"[{i}] {row['timestamp']} — {row['nama_responden']} ({row['instansi_opd']})": i
-                    for i, row in df.iterrows()
-                }
+                record_options = {}
+                for i, row in df.iterrows():
+                    who = f"{row['nama_responden']} ({row['instansi_opd']})" if unlocked else MASK
+                    record_options[f"[{i}] {row['timestamp']} — {who}"] = i
                 selected_label = st.selectbox(
                     "Pilih data responden yang ingin dihapus:",
                     list(record_options.keys()),
@@ -1232,4 +1252,5 @@ else:
         st.markdown("### 💬 **Daftar Catatan & Usulan Bebas OPD**")
         for idx, row in df.iterrows():
             if pd.notna(row['catatan_bebas']) and str(row['catatan_bebas']).strip() != "":
-                st.info(f"**{row['instansi_opd']}** ({row['nama_responden']} - {row['jabatan']}):\n\n\"{row['catatan_bebas']}\"")
+                who = f"**{row['instansi_opd']}** ({row['nama_responden']} - {row['jabatan']})" if unlocked else f"**{MASK}**"
+                st.info(f"{who}:\n\n\"{row['catatan_bebas']}\"")
