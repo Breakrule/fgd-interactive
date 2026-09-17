@@ -105,7 +105,7 @@ QUESTIONS = [
     {"id": "Q_07", "pilar": "Pilar 2: Biodiversity", "aspek": "Edukasi", "teks": "Instansi Anda mendukung integrasi nilai Biodiversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi & Alam Saijaan)."},
     {"id": "Q_08", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Pelestarian Budaya", "teks": "Kesenian daerah dan tradisi adat pesisir Kotabaru harus dipadukan dalam pameran sebagai representasi identitas Geopark."},
     {"id": "Q_09", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Ekonomi Kreatif", "teks": "Pengembangan kuliner lokal (gastronomi) bermerek Geopark Kotabaru dapat secara efektif mendongkrak kesejahteraan UMKM lokal."},
-    {"id": "Q_10", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Promosi Kebudayaan", "teks": "Festival Budaya"},
+    {"id": "Q_10", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Promosi Kebudayaan", "teks": "Integrasi geopark ke dalam agenda tahunan Festival Budaya merupakan langkah promosi yang efisien."},
     {"id": "Q_11", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Edukasi", "teks": "Instansi Anda mendukung integrasi nilai Cultural Diversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi & Alam Saijaan)."},
     {"id": "Q_12", "pilar": "Sinergi Lintas Sektor", "aspek": "Komitmen Sektoral", "teks": "Perangkat daerah/OPD Kotabaru siap berkolaborasi dalam mendukung pengembangan Geopark Kalimantan Selatan di Kotabaru"},
     {"id": "Q_13", "pilar": "Sinergi Lintas Sektor", "aspek": "Pembagian Peran (RACI)", "teks": "Bermanfaat dalam tata kelola kolaborasi dinilai sudah operasional dan jelas dalam kerangka tata kelola kolaborasi."},
