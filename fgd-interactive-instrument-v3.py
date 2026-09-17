@@ -108,7 +108,7 @@ QUESTIONS = [
     {"id": "Q_10", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Promosi Kebudayaan", "teks": "Integrasi geopark ke dalam agenda tahunan Festival Budaya merupakan langkah promosi yang efisien."},
     {"id": "Q_11", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Edukasi", "teks": "Instansi Anda mendukung integrasi nilai Cultural Diversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi & Alam Saijaan)."},
     {"id": "Q_12", "pilar": "Sinergi Lintas Sektor", "aspek": "Komitmen Sektoral", "teks": "Perangkat daerah/OPD Kotabaru siap berkolaborasi dalam mendukung pengembangan Geopark Kalimantan Selatan di Kotabaru"},
-    {"id": "Q_13", "pilar": "Sinergi Lintas Sektor", "aspek": "Pembagian Peran (RACI)", "teks": "Bermanfaat dalam tata kelola kolaborasi dinilai sudah operasional dan jelas dalam kerangka tata kelola kolaborasi."},
+    {"id": "Q_13", "pilar": "Sinergi Lintas Sektor", "aspek": "Pembagian Peran (RACI)", "teks": "Tata kelola kolaborasi dinilai sudah operasional dan jelas dalam kerangka tata kelola kolaborasi."},
     {"id": "Q_14", "pilar": "Sinergi Lintas Sektor", "aspek": "Kapasitas Pemandu (Geo-Guides)", "teks": "Pelatihan dan sertifikasi pemandu wisata lokal (Geo-Guides) sangat penting untuk segera dilakukan oleh akademisi."},
     {"id": "Q_15", "pilar": "Sinergi Lintas Sektor", "aspek": "Sistem Informasi Terintegrasi", "teks": "Pengembangan One Data Geopark sangat membantu OPD dalam berbagi data spasial, data kunjungan, dan data kelestarian lingkungan."},
     {"id": "Q_16", "pilar": "Sinergi Lintas Sektor", "aspek": "Pemantauan Kinerja", "teks": "Penggunaan Dashboard Monitoring dinilai efektif sebagai sistem pengawasan mandiri."}
