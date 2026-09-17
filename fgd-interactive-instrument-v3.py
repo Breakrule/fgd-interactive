@@ -87,15 +87,6 @@ st.markdown("""
 # NOTE: On Streamlit Community Cloud this file is EPHEMERAL (wiped on every restart).
 DATA_FILE = "data_kuesioner_fgd.csv"
 
-# Column schema shared by the Google Sheet and the local CSV fallback
-SHEET_COLUMNS = [
-    "timestamp", "nama_responden", "jabatan", "instansi_opd",
-    "Q_01", "Q_02", "Q_03", "Q_04", "Q_05", "Q_06", "Q_07", "Q_08",
-    "Q_09", "Q_10", "Q_11", "Q_12", "Q_13", "Q_14", "Q_15",
-    "hambatan_utama", "komitmen_dukungan", "prioritas_program", "catatan_bebas"
-]
-Q_COLUMNS = [f"Q_{i:02d}" for i in range(1, 16)]
-
 # Separator used to join multiple selected options into a single CSV cell
 MULTI_SEPARATOR = " | "
 
@@ -103,23 +94,34 @@ MULTI_SEPARATOR = " | "
 DELETE_PASSWORD = "caca1234"
 
 # Predefined Questions Definition
+# NOTE: 'id' values are INTERNAL storage keys only - they are NOT shown to respondents.
 QUESTIONS = [
-    {"id": "Q_01", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Pemerintah daerah dan masyarakat memiliki kesadaran tinggi untuk menjaga warisan batuan/geologi di Kotabaru agar terhindar dari perusakan."},
-    {"id": "Q_02", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Dinas-dinas terkait sepakat bahwa penetapan Kawasan Cagar Alam Geologi (KCAG) sangat penting sebagai payung hukum awal perlindungan geosite."},
-    {"id": "Q_03", "pilar": "Pilar 1: Geodiversity", "aspek": "Edukasi Kebumian", "teks": "Instansi Anda mendukung integrasi nilai geodiversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi & Alam Saijaan)."},
-    {"id": "Q_04", "pilar": "Pilar 1: Geodiversity", "aspek": "Ekowisata & Geotourism", "teks": "Peta digital pariwisata geologi dan papan informasi (QR Code) di geosite Kotabaru untuk segera diselesaikan dalam jangka pendek."},
-    {"id": "Q_05", "pilar": "Pilar 2: Biodiversity", "aspek": "Konservasi Hayati", "teks": "Program rehabilitasi vegetasi khas di sekitar geosite merupakan prioritas penting yang harus disinergikan antar instansi."},
-    {"id": "Q_06", "pilar": "Pilar 2: Biodiversity", "aspek": "Edukasi & Eduwisata", "teks": "Masyarakat lokal di lingkar geosite memiliki potensi besar untuk menjadi agen aktif dalam perlindungan flora-fauna endemik."},
-    {"id": "Q_07", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Pelestarian Budaya", "teks": "Kesenian daerah dan tradisi adat pesisir Kotabaru harus dipadukan dalam pameran geosite sebagai representasi identitas Geopark."},
-    {"id": "Q_08", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Ekonomi Kreatif", "teks": "Pengembangan kuliner gastronomi lokal (Geo-products) bermerek Geopark Kotabaru dapat secara efektif mendongkrak kesejahteraan UMKM lokal."},
-    {"id": "Q_09", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Promosi Kebudayaan", "teks": "Integrasi pameran geopark ke dalam agenda tahunan Festival Budaya Saijaan merupakan langkah promosi yang ideal dan efisien."},
-    {"id": "Q_10", "pilar": "Sinergi Lintas Sektor", "aspek": "Komitmen Sektoral", "teks": "Perangkat daerah/OPD di Kotabaru siap mengesampingkan ego sektoral untuk berkolaborasi mengelola program Geopark secara terpadu."},
-    {"id": "Q_11", "pilar": "Sinergi Lintas Sektor", "aspek": "Pembagian Peran (RACI)", "teks": "Struktur pembagian peran (RACI Matrix) lintas OPD dalam draf Road Map dinilai sudah adil, operasional, dan jelas."},
-    {"id": "Q_12", "pilar": "Sinergi Lintas Sektor", "aspek": "Keberlanjutan Anggaran", "teks": "Instansi Anda berkomitmen untuk merefokusing dan menyinkronkan anggaran internal OPD guna mendukung pemeliharaan kawasan Geopark."},
-    {"id": "Q_13", "pilar": "Sinergi Lintas Sektor", "aspek": "Kapasitas Pemandu (Geo-Guides)", "teks": "Pelatihan dan sertifikasi pemandu wisata lokal (Geo-Guides) sangat penting untuk segera dilakukan oleh Disparpora bersama akademisi."},
-    {"id": "Q_14", "pilar": "Sinergi Lintas Sektor", "aspek": "Sistem Informasi Terintegrasi", "teks": "Pengembangan One Data Geopark sangat membantu OPD dalam berbagi data spasial, data kunjungan, dan data kelestarian lingkungan."},
-    {"id": "Q_15", "pilar": "Sinergi Lintas Sektor", "aspek": "Pemantauan Kinerja", "teks": "Penggunaan Dashboard Monitoring dinilai efektif sebagai sistem pengawasan mandiri bagi pimpinan daerah (Bupati/Sekda) untuk melacak target OPD."}
+    {"id": "Q_01", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Konservasi."},
+    {"id": "Q_02", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Sepakat bahwa perlindungan geosite sangat penting untuk pengembangan geopark."},
+    {"id": "Q_03", "pilar": "Pilar 1: Geodiversity", "aspek": "Edukasi Kebumian", "teks": "Mendukung informasi tentang geodiversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi dan Alam Saijaan)."},
+    {"id": "Q_04", "pilar": "Pilar 1: Geodiversity", "aspek": "Ekowisata & Geotourism", "teks": "Ketersediaan peta digital pariwisata geologi dan papan informasi di geosite Kotabaru sangat berguna bagi masyarakat."},
+    {"id": "Q_05", "pilar": "Pilar 2: Biodiversity", "aspek": "Konservasi Hayati", "teks": "keanekaragaman hayati sangat bermanfaat bagi manusia dan lingkungan."},
+    {"id": "Q_06", "pilar": "Pilar 2: Biodiversity", "aspek": "Edukasi & Eduwisata", "teks": "Masyarakat memiliki potensi besar untuk menjadi agen aktif dalam perlindungan flora-fauna endemik."},
+    {"id": "Q_07", "pilar": "Pilar 2: Biodiversity", "aspek": "Edukasi", "teks": "Instansi Anda mendukung integrasi nilai Biodiversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi & Alam Saijaan)."},
+    {"id": "Q_08", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Pelestarian Budaya", "teks": "Kesenian daerah dan tradisi adat pesisir Kotabaru harus dipadukan dalam pameran sebagai representasi identitas Geopark."},
+    {"id": "Q_09", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Ekonomi Kreatif", "teks": "Pengembangan kuliner lokal (gastronomi) bermerek Geopark Kotabaru dapat secara efektif mendongkrak kesejahteraan UMKM lokal."},
+    {"id": "Q_10", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Promosi Kebudayaan", "teks": "Festival Budaya"},
+    {"id": "Q_11", "pilar": "Pilar 3: Cultural Diversity", "aspek": "Edukasi", "teks": "Instansi Anda mendukung integrasi nilai Cultural Diversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi & Alam Saijaan)."},
+    {"id": "Q_12", "pilar": "Sinergi Lintas Sektor", "aspek": "Komitmen Sektoral", "teks": "Perangkat daerah/OPD Kotabaru siap berkolaborasi dalam mendukung pengembangan Geopark Kalimantan Selatan di Kotabaru"},
+    {"id": "Q_13", "pilar": "Sinergi Lintas Sektor", "aspek": "Pembagian Peran (RACI)", "teks": "Bermanfaat dalam tata kelola kolaborasi dinilai sudah operasional dan jelas dalam kerangka tata kelola kolaborasi."},
+    {"id": "Q_14", "pilar": "Sinergi Lintas Sektor", "aspek": "Kapasitas Pemandu (Geo-Guides)", "teks": "Pelatihan dan sertifikasi pemandu wisata lokal (Geo-Guides) sangat penting untuk segera dilakukan oleh akademisi."},
+    {"id": "Q_15", "pilar": "Sinergi Lintas Sektor", "aspek": "Sistem Informasi Terintegrasi", "teks": "Pengembangan One Data Geopark sangat membantu OPD dalam berbagi data spasial, data kunjungan, dan data kelestarian lingkungan."},
+    {"id": "Q_16", "pilar": "Sinergi Lintas Sektor", "aspek": "Pemantauan Kinerja", "teks": "Penggunaan Dashboard Monitoring dinilai efektif sebagai sistem pengawasan mandiri."}
 ]
+
+# Derive the storage schema from QUESTIONS so adding/removing questions never
+# desyncs the Google Sheet / CSV columns or the Quick Count analytics.
+Q_COLUMNS = [q["id"] for q in QUESTIONS]
+SHEET_COLUMNS = (
+    ["timestamp", "nama_responden", "jabatan", "instansi_opd"]
+    + Q_COLUMNS
+    + ["hambatan_utama", "komitmen_dukungan", "prioritas_program", "catatan_bebas"]
+)
 
 OPD_LIST = [
     "Sekretariat Daerah (Setda)",
@@ -138,30 +140,28 @@ OPD_LIST = [
 ]
 
 HAMBATAN_OPTIONS = [
-    "H-01. Belum dilakukannya refokusing/realokasi program rutin DPA OPD untuk kegiatan berdampak",
-    "H-02. Keterbatasan staf teknis & kompetensi spesifik (butuh pembinaan/pelatihan BKPSDMD)",
-    "H-03. Ketidakjelasan pembagian wewenang & rincian SOP teknis antar-instansi",
-    "H-04. Kurangnya pemahaman & penyamaan persepsi internal OPD tentang Road Map Geopark",
-    "H-05. Regulasi & juknis operasional tingkat daerah yang belum diundangkan",
-    "H-06. Kendala geografis & integrasi pemetaan lokasi geosite",
+    "Keterbatasan staf teknis & kompetensi spesifik (butuh pembinaan/pelatihan)",
+    "Ketidakjelasan pembagian wewenang & rincian SOP teknis antar-instansi",
+    "Kurangnya pemahaman & penyamaan persepsi internal OPD tentang Road Map Geopark",
+    "Regulasi & juknis operasional tingkat daerah yang belum diundangkan",
+    "Kendala geografis & integrasi pemetaan lokasi geosite",
     "Lainnya (Tulis pada Catatan Bebas)"
 ]
 
 DUKUNGAN_OPTIONS = [
-    "D-01. Merekalibrasi & merealokasi anggaran DPA OPD untuk program berdampak Geopark",
-    "D-02. Menugaskan staf aktif masuk Tim Teknis Geopark (koordinasi BKPSDMD)",
-    "D-03. Menyediakan & mengintegrasikan data sektoral ke One Data Geopark",
-    "D-04. Menyinkronkan indikator program kerja rutin dengan Road Map Geopark",
-    "D-05. Mengoptimalkan publikasi & kampanye edukasi melalui media resmi OPD",
+    "Menugaskan staf aktif masuk Tim Kerja Geopark (koordinasi BKPSDMD)",
+    "Menyediakan & mengintegrasikan data sektoral ke One Data Geopark",
+    "Menyinkronkan indikator program kerja rutin dengan Road Map Geopark",
+    "Mengoptimalkan publikasi & kampanye edukasi melalui media resmi OPD",
     "Lainnya (Tulis pada Catatan Bebas)"
 ]
 
 PRIORITAS_OPTIONS = [
-    "P-01. Penguatan legalitas wilayah geosite & usulan Kawasan Cagar Alam Geologi (KCAG)",
-    "P-02. Pembangunan infrastruktur dasar & papan info geosite",
-    "P-03. Edukasi sekolah melalui kurikulum muatan lokal & ASN sharing session",
-    "P-04. Pelatihan Pokdarwis & sertifikasi pemandu lokal (Geo-guides)",
-    "P-05. Promosi ekowisata terpadu & fasilitasi kemitraan produk lokal (Geo-products)",
+    "Penguatan legalitas wilayah geosite",
+    "Pembangunan infrastruktur dasar & papan info geosite",
+    "Edukasi sekolah melalui kurikulum muatan lokal & ASN sharing session",
+    "Pelatihan Pokdarwis & sertifikasi pemandu lokal (Geo-guides)",
+    "Promosi ekowisata terpadu & fasilitasi kemitraan produk lokal (Geo-products)",
     "Lainnya (Tulis pada Catatan Bebas)"
 ]
 
@@ -951,10 +951,10 @@ elif menu == "📝 Input Kuesioner OPD":
             for q in pilar_qs:
                 col_q1, col_q2 = st.columns([3, 1])
                 with col_q1:
-                    st.markdown(f"**[{q['id']}] {q['aspek']}**\n\n{q['teks']}")
+                    st.markdown(f"**{q['aspek']}**\n\n{q['teks']}")
                 with col_q2:
                     scores[q["id"]] = st.slider(
-                        f"Skor {q['id']}", 
+                        "Skor (1-5)",
                         min_value=1, 
                         max_value=5, 
                         value=4, 
@@ -1081,7 +1081,7 @@ elif menu == "📊 Quick Count Real-Time":
         total_opd = df["instansi_opd"].nunique()
         
         # Calculate overall score
-        q_cols = [f"Q_{i:02d}" for i in range(1, 16)]
+        q_cols = [q["id"] for q in QUESTIONS]
         avg_overall = df[q_cols].values.mean()
         
         col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -1100,12 +1100,10 @@ elif menu == "📊 Quick Count Real-Time":
         # Pillar Progress Breakdown
         st.subheader("📈 Rata-Rata Skor Persepsi per Pilar Utama Geopark")
         
-        pilar_mapping = {
-            "Pilar 1: Geodiversity": ["Q_01", "Q_02", "Q_03", "Q_04"],
-            "Pilar 2: Biodiversity": ["Q_05", "Q_06"],
-            "Pilar 3: Cultural Diversity": ["Q_07", "Q_08", "Q_09"],
-            "Sinergi Lintas Sektor & Tata Kelola": ["Q_10", "Q_11", "Q_12", "Q_13", "Q_14", "Q_15"]
-        }
+        # Derive pillar groupings from QUESTIONS so edits never desync the analytics
+        pilar_mapping = {}
+        for q in QUESTIONS:
+            pilar_mapping.setdefault(q["pilar"], []).append(q["id"])
         
         pilar_scores = []
         for p_name, cols in pilar_mapping.items():
