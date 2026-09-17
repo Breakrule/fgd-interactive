@@ -885,7 +885,7 @@ st.sidebar.markdown("---")
 
 # --- Group 2 (BOTTOM): Kuesioner FGD ---
 menu = st.sidebar.radio(
-    "📋 Kuesioner FGD",
+    "📋 Kuesioner",
     KUESIONER_MENUS,
     key="radio_kuesioner",
     index=None,
@@ -918,7 +918,7 @@ if st.session_state.active_section == "dashboard":
 # ---------------------------------------------------------
 elif menu == "📝 Input Kuesioner OPD":
     st.title("📝 Form Kuesioner Persepsi Pemangku Kepentingan")
-    st.caption("Aplikasi Input Data Resmi FGD I: Integrasi Road Map Geopark Kotabaru V3")
+    st.caption("Sosialisasi Potensi Geopark dan Uji Publik Roadmap Kotabaru")
     
     st.markdown("""
     ---
