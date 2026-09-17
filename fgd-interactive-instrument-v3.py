@@ -96,7 +96,7 @@ DELETE_PASSWORD = "caca1234"
 # Predefined Questions Definition
 # NOTE: 'id' values are INTERNAL storage keys only - they are NOT shown to respondents.
 QUESTIONS = [
-    {"id": "Q_01", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Konservasi."},
+    {"id": "Q_01", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Pemerintah daerah dan masyarakat memiliki kesadaran tinggi untuk menjaga warisan batuan/geologi di Kotabaru agar terhindar dari perusakan."},
     {"id": "Q_02", "pilar": "Pilar 1: Geodiversity", "aspek": "Konservasi & Legalitas", "teks": "Sepakat bahwa perlindungan geosite sangat penting untuk pengembangan geopark."},
     {"id": "Q_03", "pilar": "Pilar 1: Geodiversity", "aspek": "Edukasi Kebumian", "teks": "Mendukung informasi tentang geodiversity ke dalam kurikulum muatan lokal sekolah dasar (Bumi dan Alam Saijaan)."},
     {"id": "Q_04", "pilar": "Pilar 1: Geodiversity", "aspek": "Ekowisata & Geotourism", "teks": "Ketersediaan peta digital pariwisata geologi dan papan informasi di geosite Kotabaru sangat berguna bagi masyarakat."},
