@@ -1,6 +1,7 @@
 # Python cache
 __pycache__/
 *.py[cod]
+.venv/
 
 # Runtime-generated questionnaire data (may contain respondent info)
 data_kuesioner_fgd.csv

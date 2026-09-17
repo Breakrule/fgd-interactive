@@ -80,6 +80,22 @@ st.markdown("""
     h3 { font-size: 1.1rem !important; }
     div[data-testid="stMetricValue"] { font-size: 1.1rem !important; }
 }
+
+/* Pill buttons (Bagian 3): let long option text wrap onto multiple lines
+   instead of being clipped with an ellipsis. */
+button[data-variant="pills"],
+button[data-variant="pills"] * {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+}
+button[data-variant="pills"] {
+    height: auto !important;
+    min-height: 2.5rem;
+    text-align: left;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -954,72 +970,24 @@ elif menu == "📝 Input Kuesioner OPD":
         *Pilihlah **maksimal 3 opsi** paling dominan pada setiap kategori untuk menggambarkan kondisi instansi Anda.*
         """)
 
-        # CSS: force FULL text visibility in multiselect tags & dropdown options
-        st.markdown(
-            """
-            <style>
-            /* Select container: let tags wrap onto multiple lines and grow */
-            div[data-baseweb="select"] > div {
-                height: auto !important;
-                min-height: 2.6rem !important;
-                flex-wrap: wrap !important;
-                overflow: visible !important;
-            }
-            /* Selected tag chips: show the FULL text (kill ellipsis clipping) */
-            div[data-baseweb="tag"] {
-                max-width: 100% !important;
-                height: auto !important;
-                margin: 2px 4px 2px 0 !important;
-                overflow: visible !important;
-            }
-            div[data-baseweb="tag"] span,
-            div[data-baseweb="tag"] div {
-                white-space: normal !important;
-                overflow: visible !important;
-                text-overflow: clip !important;
-                overflow-wrap: anywhere !important;
-                word-break: break-word !important;
-                line-height: 1.3 !important;
-                max-width: 100% !important;
-            }
-            /* Dropdown options: show FULL text (kill ellipsis clipping) */
-            div[data-baseweb="popover"] li,
-            div[data-baseweb="popover"] li div,
-            div[data-baseweb="popover"] li span {
-                white-space: normal !important;
-                overflow: visible !important;
-                text-overflow: clip !important;
-                overflow-wrap: anywhere !important;
-                word-break: break-word !important;
-                height: auto !important;
-                line-height: 1.35 !important;
-            }
-            div[data-baseweb="popover"] li {
-                padding-top: 6px !important;
-                padding-bottom: 6px !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-        
-        hambatan = st.multiselect(
-            "Hambatan Utama Instansi (maks. 3 opsi):",
+        st.caption("Ketuk opsi untuk memilih atau membatalkan pilihan (maksimal 3 opsi per kategori).")
+        hambatan = st.pills(
+            "Hambatan Utama Instansi:",
             HAMBATAN_OPTIONS,
-            max_selections=3,
-            placeholder="Klik untuk memilih hingga 3 hambatan..."
+            selection_mode="multi",
+            key="pills_hambatan",
         )
-        dukungan = st.multiselect(
-            "Bentuk Komitmen Dukungan Riil (maks. 3 opsi):",
+        dukungan = st.pills(
+            "Bentuk Komitmen Dukungan Riil:",
             DUKUNGAN_OPTIONS,
-            max_selections=3,
-            placeholder="Klik untuk memilih hingga 3 komitmen..."
+            selection_mode="multi",
+            key="pills_dukungan",
         )
-        prioritas = st.multiselect(
-            "Prioritas Utama Program (maks. 3 opsi):",
+        prioritas = st.pills(
+            "Prioritas Utama Program:",
             PRIORITAS_OPTIONS,
-            max_selections=3,
-            placeholder="Klik untuk memilih hingga 3 prioritas..."
+            selection_mode="multi",
+            key="pills_prioritas",
         )
             
         st.markdown("---")
@@ -1029,8 +997,22 @@ elif menu == "📝 Input Kuesioner OPD":
         submitted = st.form_submit_button("🚀 Kirim Jawaban Kuesioner OPD")
         
         if submitted:
+            terlalu_banyak = [
+                label_kategori
+                for label_kategori, pilihan in (
+                    ("Hambatan Utama", hambatan),
+                    ("Bentuk Komitmen", dukungan),
+                    ("Prioritas Utama", prioritas),
+                )
+                if len(pilihan) > 3
+            ]
             if not nama or not jabatan:
                 st.error("⚠️ Nama Lengkap dan Jabatan wajib diisi!")
+            elif terlalu_banyak:
+                st.error(
+                    "⚠️ Maksimal 3 opsi per kategori. Kurangi pilihan pada: "
+                    + ", ".join(terlalu_banyak)
+                )
             else:
                 row_dict = {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
