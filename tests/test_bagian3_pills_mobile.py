@@ -120,12 +120,23 @@ class Bagian3PillsMobileTests(unittest.TestCase):
                 finally:
                     page.close()
 
-    def test_max_three_enforced_and_valid_submission_saves(self):
+    def test_fourth_pick_is_dropped_live_and_submission_saves(self):
         page = self.open_form(375)
         try:
             choices = CHOICES["HAMBATAN_OPTIONS"]
             for option in choices[:3]:
                 page.get_by_role("button", name=option).click()
+            page.get_by_role("button", name=choices[3]).click()
+            page.get_by_text("otomatis dilepas", exact=False).wait_for()
+            for option in choices[:3]:
+                self.assertEqual(
+                    page.get_by_role("button", name=option).get_attribute("aria-pressed"),
+                    "true",
+                )
+            self.assertNotEqual(
+                page.get_by_role("button", name=choices[3]).get_attribute("aria-pressed"),
+                "true",
+            )
             page.get_by_label("Nama Lengkap Responden *").fill("Uji Coba")
             page.get_by_label("Jabatan Responden *").fill("Penguji")
             page.get_by_role("button", name="Kirim Jawaban Kuesioner OPD").click()
@@ -133,12 +144,7 @@ class Bagian3PillsMobileTests(unittest.TestCase):
             rows = DATA_FILE.read_text(encoding="utf-8").strip().splitlines()
             self.assertEqual(len(rows), 2)
             self.assertIn(choices[0], rows[1])
-
-            page.get_by_role("button", name=choices[3]).click()
-            page.get_by_role("button", name="Kirim Jawaban Kuesioner OPD").click()
-            page.get_by_text("Kurangi pilihan pada", exact=False).wait_for()
-            rows_after = DATA_FILE.read_text(encoding="utf-8").strip().splitlines()
-            self.assertEqual(len(rows_after), 2)
+            self.assertNotIn(choices[3], rows[1])
         finally:
             page.close()
 

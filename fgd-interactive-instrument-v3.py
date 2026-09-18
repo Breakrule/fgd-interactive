@@ -882,6 +882,16 @@ def _activate_dashboard():
 def _activate_kuesioner():
     st.session_state.active_section = "kuesioner"
 
+MAX_PICKS_PER_CATEGORY = 3
+
+
+def _cap_pills(key):
+    """Trim a pill selection back to the per-category maximum immediately."""
+    pilihan = st.session_state.get(key) or []
+    if len(pilihan) > MAX_PICKS_PER_CATEGORY:
+        st.session_state[key] = pilihan[:MAX_PICKS_PER_CATEGORY]
+        st.session_state["pills_cap_warning"] = True
+
 # Keep only the ACTIVE group highlighted and clear the other one, so clicking any
 # of its items always re-triggers navigation (a radio does not fire on_change when
 # the already-selected item is clicked again).
@@ -928,109 +938,116 @@ elif menu == "📝 Input Kuesioner OPD":
     *Mohon lengkapi data responden dari instansi/OPD Anda sebelum mengisi pertanyaan kuesioner.*
     """)
     
-    with st.form("form_kuesioner_opd"):
-        col_bio1, col_bio2, col_bio3 = st.columns(3)
-        with col_bio1:
-            nama = st.text_input("Nama Lengkap Responden *", placeholder="Contoh: Dr. H. Ahmad, M.Si")
-        with col_bio2:
-            jabatan = st.text_input("Jabatan Responden *", placeholder="Contoh: Kepala Bidang / Analis Kebijakan")
-        with col_bio3:
-            instansi = st.selectbox("Instansi / Perangkat Daerah (OPD) *", OPD_LIST)
-            
-        st.markdown("""
-        ---
-        ### 📊 **Bagian 2: Penilaian Kuantitatif (Skala Likert 1 - 5)**
-        *Petunjuk Skor: **1** = Sangat Tidak Setuju, **2** = Tidak Setuju, **3** = Cukup Setuju, **4** = Setuju, **5** = Sangat Setuju.*
-        """)
-        
-        scores = {}
-        
-        # Group questions by Pilar
-        pilars = ["Pilar 1: Geodiversity", "Pilar 2: Biodiversity", "Pilar 3: Cultural Diversity", "Sinergi Lintas Sektor"]
-        for pilar in pilars:
-            st.subheader(f"📌 {pilar}")
-            pilar_qs = [q for q in QUESTIONS if q["pilar"] == pilar]
-            for q in pilar_qs:
-                col_q1, col_q2 = st.columns([3, 1])
-                with col_q1:
-                    st.markdown(f"**{q['aspek']}**\n\n{q['teks']}")
-                with col_q2:
-                    scores[q["id"]] = st.slider(
-                        "Skor (1-5)",
-                        min_value=1, 
-                        max_value=5, 
-                        value=4, 
-                        key=f"slider_{q['id']}"
-                    )
-                st.markdown("<hr style='margin:5px 0; border:0.5px solid #eee;'>", unsafe_allow_html=True)
-                
-        st.markdown("""
-        ---
-        ### 🎯 **Bagian 3: Pilihan Terpandu Opsi Strategis (Analisis Kualitatif)**
-        *Pilihlah **maksimal 3 opsi** paling dominan pada setiap kategori untuk menggambarkan kondisi instansi Anda.*
-        """)
-
-        st.caption("Ketuk opsi untuk memilih atau membatalkan pilihan (maksimal 3 opsi per kategori).")
-        hambatan = st.pills(
-            "Hambatan Utama Instansi:",
-            HAMBATAN_OPTIONS,
-            selection_mode="multi",
-            key="pills_hambatan",
-        )
-        dukungan = st.pills(
-            "Bentuk Komitmen Dukungan Riil:",
-            DUKUNGAN_OPTIONS,
-            selection_mode="multi",
-            key="pills_dukungan",
-        )
-        prioritas = st.pills(
-            "Prioritas Utama Program:",
-            PRIORITAS_OPTIONS,
-            selection_mode="multi",
-            key="pills_prioritas",
-        )
-            
-        st.markdown("---")
-        st.markdown("### 💬 **Bagian 4: Catatan Bebas & Usulan Solusi**")
-        catatan = st.text_area("Tuliskan argumen tambahan, penjelasan hambatan, atau usulan program baru dari instansi Anda:", placeholder="Tuliskan catatan teknis di sini...")
-        
-        submitted = st.form_submit_button("🚀 Kirim Jawaban Kuesioner OPD")
-        
-        if submitted:
-            terlalu_banyak = [
-                label_kategori
-                for label_kategori, pilihan in (
-                    ("Hambatan Utama", hambatan),
-                    ("Bentuk Komitmen", dukungan),
-                    ("Prioritas Utama", prioritas),
+    col_bio1, col_bio2, col_bio3 = st.columns(3)
+    with col_bio1:
+        nama = st.text_input("Nama Lengkap Responden *", placeholder="Contoh: Dr. H. Ahmad, M.Si")
+    with col_bio2:
+        jabatan = st.text_input("Jabatan Responden *", placeholder="Contoh: Kepala Bidang / Analis Kebijakan")
+    with col_bio3:
+        instansi = st.selectbox("Instansi / Perangkat Daerah (OPD) *", OPD_LIST)
+    
+    st.markdown("""
+    ---
+    ### 📊 **Bagian 2: Penilaian Kuantitatif (Skala Likert 1 - 5)**
+    *Petunjuk Skor: **1** = Sangat Tidak Setuju, **2** = Tidak Setuju, **3** = Cukup Setuju, **4** = Setuju, **5** = Sangat Setuju.*
+    """)
+    
+    scores = {}
+    
+    # Group questions by Pilar
+    pilars = ["Pilar 1: Geodiversity", "Pilar 2: Biodiversity", "Pilar 3: Cultural Diversity", "Sinergi Lintas Sektor"]
+    for pilar in pilars:
+        st.subheader(f"📌 {pilar}")
+        pilar_qs = [q for q in QUESTIONS if q["pilar"] == pilar]
+        for q in pilar_qs:
+            col_q1, col_q2 = st.columns([3, 1])
+            with col_q1:
+                st.markdown(f"**{q['aspek']}**\n\n{q['teks']}")
+            with col_q2:
+                scores[q["id"]] = st.slider(
+                    "Skor (1-5)",
+                    min_value=1,
+                    max_value=5,
+                    value=4,
+                    key=f"slider_{q['id']}"
                 )
-                if len(pilihan) > 3
-            ]
-            if not nama or not jabatan:
-                st.error("⚠️ Nama Lengkap dan Jabatan wajib diisi!")
-            elif terlalu_banyak:
-                st.error(
-                    "⚠️ Maksimal 3 opsi per kategori. Kurangi pilihan pada: "
-                    + ", ".join(terlalu_banyak)
-                )
-            else:
-                row_dict = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "nama_responden": nama,
-                    "jabatan": jabatan,
-                    "instansi_opd": instansi,
-                    "hambatan_utama": MULTI_SEPARATOR.join(hambatan),
-                    "komitmen_dukungan": MULTI_SEPARATOR.join(dukungan),
-                    "prioritas_program": MULTI_SEPARATOR.join(prioritas),
-                    "catatan_bebas": catatan
-                }
-                # Add score values
-                for q_id, val in scores.items():
-                    row_dict[q_id] = val
-                    
-                save_response(row_dict)
-                st.balloons()
-                st.success(f"✅ Terima kasih **{nama}** ({instansi})! Jawaban kuesioner Anda berhasil disimpan dan langsung masuk ke Quick Count Real-Time.")
+            st.markdown("<hr style='margin:5px 0; border:0.5px solid #eee;'>", unsafe_allow_html=True)
+    
+    st.markdown("""
+    ---
+    ### 🎯 **Bagian 3: Pilihan Terpandu Opsi Strategis (Analisis Kualitatif)**
+    *Pilihlah **maksimal 3 opsi** paling dominan pada setiap kategori untuk menggambarkan kondisi instansi Anda.*
+    """)
+    
+    st.caption("Ketuk opsi untuk memilih atau membatalkan pilihan (maksimal 3 opsi per kategori).")
+    hambatan = st.pills(
+        "Hambatan Utama Instansi:",
+        HAMBATAN_OPTIONS,
+        selection_mode="multi",
+        key="pills_hambatan",
+        on_change=_cap_pills,
+        kwargs={"key": "pills_hambatan"},
+    )
+    dukungan = st.pills(
+        "Bentuk Komitmen Dukungan Riil:",
+        DUKUNGAN_OPTIONS,
+        selection_mode="multi",
+        key="pills_dukungan",
+        on_change=_cap_pills,
+        kwargs={"key": "pills_dukungan"},
+    )
+    prioritas = st.pills(
+        "Prioritas Utama Program:",
+        PRIORITAS_OPTIONS,
+        selection_mode="multi",
+        key="pills_prioritas",
+        on_change=_cap_pills,
+        kwargs={"key": "pills_prioritas"},
+    )
+    if st.session_state.pop("pills_cap_warning", False):
+        st.warning("⚠️ Maksimal 3 opsi per kategori — pilihan kelebihan otomatis dilepas.")
+    
+    st.markdown("---")
+    st.markdown("### 💬 **Bagian 4: Catatan Bebas & Usulan Solusi**")
+    catatan = st.text_area("Tuliskan argumen tambahan, penjelasan hambatan, atau usulan program baru dari instansi Anda:", placeholder="Tuliskan catatan teknis di sini...")
+    
+    submitted = st.button("🚀 Kirim Jawaban Kuesioner OPD", type="primary", key="kirim_kuesioner")
+    
+    if submitted:
+        terlalu_banyak = [
+            label_kategori
+            for label_kategori, pilihan in (
+                ("Hambatan Utama", hambatan),
+                ("Bentuk Komitmen", dukungan),
+                ("Prioritas Utama", prioritas),
+            )
+            if len(pilihan) > MAX_PICKS_PER_CATEGORY
+        ]
+        if not nama or not jabatan:
+            st.error("⚠️ Nama Lengkap dan Jabatan wajib diisi!")
+        elif terlalu_banyak:
+            st.error(
+                "⚠️ Maksimal 3 opsi per kategori. Kurangi pilihan pada: "
+                + ", ".join(terlalu_banyak)
+            )
+        else:
+            row_dict = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "nama_responden": nama,
+                "jabatan": jabatan,
+                "instansi_opd": instansi,
+                "hambatan_utama": MULTI_SEPARATOR.join(hambatan),
+                "komitmen_dukungan": MULTI_SEPARATOR.join(dukungan),
+                "prioritas_program": MULTI_SEPARATOR.join(prioritas),
+                "catatan_bebas": catatan
+            }
+            # Add score values
+            for q_id, val in scores.items():
+                row_dict[q_id] = val
+    
+            save_response(row_dict)
+            st.balloons()
+            st.success(f"✅ Terima kasih **{nama}** ({instansi})! Jawaban kuesioner Anda berhasil disimpan dan langsung masuk ke Quick Count Real-Time.")
 
 # ---------------------------------------------------------
 # KUESIONER GROUP - MENU 2: QUICK COUNT REAL-TIME
